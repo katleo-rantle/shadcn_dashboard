@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import Sidebar from '@/components/Sidebar';
+import AppSidebar from '@/components/AppSidebar';
 import Navbar from '@/components/Navbar';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
@@ -36,7 +36,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Sidebar />
+          <AppSidebar />
           <main className='w-full'>
             <Navbar />
             <div className='px-4'>{children}</div>
