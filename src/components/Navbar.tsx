@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Moon, Settings, Sun, User } from 'lucide-react';
+import { LogOut, Moon, PanelRightOpen, Settings, Sun, User } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
@@ -13,13 +13,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from './ui/button';
 import { useTheme } from 'next-themes';
+import { SidebarTrigger, useSidebar } from './ui/sidebar';
 
 const Navbar = () => {
   const { setTheme } = useTheme();
+  const {toggleSidebar} = useSidebar();
   return (
     <nav className='p-4 flex items-center justify-between'>
       {/* left */}
-      sidbarCollapseButton
+      {/* <SidebarTrigger /> */}
+      <Button variant='ghost' size='icon' onClick={toggleSidebar}>
+        <PanelRightOpen />
+        <span className='sr-only'>Toggle sidebar</span>
+      </Button>
       {/* right */}
       <div className='flex items-center gap-4'>
         <Link href={'/'}>Dashboard</Link>
