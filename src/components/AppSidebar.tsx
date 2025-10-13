@@ -65,8 +65,9 @@ const AppSidebar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link href='/'>
-                <Home className='mr-2 h-4 w-4' />
-                <span className='font-bold text-lg tracking-wide'>
+                {/* <Home className='mr-2 h-4 w-4' /> */}
+                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-gray-500 to-blue-500 text-white font-extrabold text-xl rounded-xs">RC</div>
+                <span className='font-bold text-sm tracking-wide'>
                   {company}
                 </span>
               </Link>
