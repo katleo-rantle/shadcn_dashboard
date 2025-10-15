@@ -89,12 +89,12 @@ export const columns: ColumnDef<Project>[] = [
   },
   {
     accessorKey: 'QuotedCost',
-    header: () => <div className='text-right'>Quoted Cost</div>,
+    header: () => <div className='text-right'>Budget</div>,
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('QuotedCost'));
       const formatted = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'ZAR',
       }).format(amount);
 
       return <div className='text-right font-medium'>{formatted}</div>;
