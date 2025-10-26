@@ -97,26 +97,28 @@ export const projects = [
   },
 ];
 
-const Jobs = [
+export const Jobs = [
   {
     JobID: 101,
     ProjectID: 1,
     JobName: 'Electrical Wiring',
     JobBudget: 25000.0,
     Status: 'In Progress',
-    TASKs: [
+    Tasks: [
       {
         TaskID: 1001,
         TaskName: 'Install Main Panel',
         DueDate: '2024-04-15',
+        TaskBudget: 5000.0,
       },
       {
         TaskID: 1002,
         TaskName: 'Wire Outlets',
         DueDate: '2024-04-20',
+        TaskBudget: 1000.0,
       },
     ],
-    INVOICEs: [
+    Invoices: [
       {
         InvoiceID: 3001,
         Amount: 8000.0,
@@ -130,7 +132,7 @@ const Jobs = [
     JobName: 'Plumbing Installation',
     JobBudget: 18000.0,
     Status: 'Active',
-    TASKs: [
+    Tasks: [
       {
         TaskID: 1003,
         TaskName: 'Lay Pipes',
@@ -142,7 +144,7 @@ const Jobs = [
         DueDate: '2024-05-01',
       },
     ],
-    INVOICEs: [
+    Invoices: [
       {
         InvoiceID: 3002,
         Amount: 5000.0,
@@ -156,7 +158,7 @@ const Jobs = [
     JobName: 'Cabinet Installation',
     JobBudget: 12000.0,
     Status: 'Completed',
-    TASKs: [
+    Tasks: [
       {
         TaskID: 1005,
         TaskName: 'Measure and Cut',
@@ -168,7 +170,7 @@ const Jobs = [
         DueDate: '2024-02-28',
       },
     ],
-    INVOICEs: [
+    Invoices: [
       {
         InvoiceID: 3003,
         Amount: 12000.0,
@@ -182,7 +184,7 @@ const Jobs = [
     JobName: 'Foundation Work',
     JobBudget: 60000.0,
     Status: 'In Progress',
-    TASKs: [
+    Tasks: [
       {
         TaskID: 1007,
         TaskName: 'Excavate Site',
@@ -194,7 +196,7 @@ const Jobs = [
         DueDate: '2024-07-20',
       },
     ],
-    INVOICEs: [
+    Invoices: [
       {
         InvoiceID: 3004,
         Amount: 20000.0,
@@ -208,7 +210,7 @@ const Jobs = [
     JobName: 'Structural Steel',
     JobBudget: 45000.0,
     Status: 'Active',
-    TASKs: [
+    Tasks: [
       {
         TaskID: 1009,
         TaskName: 'Fabricate Beams',
@@ -220,7 +222,7 @@ const Jobs = [
         DueDate: '2024-08-10',
       },
     ],
-    INVOICEs: [
+    Invoices: [
       {
         InvoiceID: 3005,
         Amount: 15000.0,

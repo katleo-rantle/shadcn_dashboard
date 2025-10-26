@@ -1,5 +1,6 @@
 import AppCard from '@/components/AppCard';
 import Overview from '@/components/Overview';
+import Taskboard from '@/components/Taskboard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -67,7 +68,7 @@ const SingleProject = () => {
           <TabsContent value='overview'>
             <Overview/>
           </TabsContent>
-          <TabsContent value='password'>Change your password here.</TabsContent>
+          <TabsContent value='tasks'><Taskboard/></TabsContent>
         </Tabs>
        
       </section>
