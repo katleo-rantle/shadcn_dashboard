@@ -2,7 +2,6 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectTrigger,
@@ -10,16 +9,18 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 
-export default null; // placeholder default export so import style above still works
+// Updated forms: accept optional initial values and an onUpdate callback
 
 export function NewColumnForm({
   onCreate,
   onCancel,
+  initial,
 }: {
   onCreate: (label: string) => void;
   onCancel: () => void;
+  initial?: { label?: string };
 }) {
-  const [label, setLabel] = React.useState('');
+  const [label, setLabel] = React.useState(initial?.label ?? '');
   return (
     <form
       onSubmit={(e) => {
@@ -38,7 +39,7 @@ export function NewColumnForm({
           <Button variant='ghost' onClick={onCancel} type='button'>
             Cancel
           </Button>
-          <Button type='submit'>Create</Button>
+          <Button type='submit'>Save</Button>
         </div>
       </div>
     </form>
@@ -49,6 +50,7 @@ export function NewJobForm({
   columns = [],
   onCreate,
   onCancel,
+  initial,
 }: {
   columns: string[];
   onCreate: (
@@ -56,10 +58,18 @@ export function NewJobForm({
     colId: string
   ) => void;
   onCancel: () => void;
+  initial?: {
+    JobID?: number;
+    JobName?: string;
+    columnId?: string;
+    Tasks?: any[];
+  };
 }) {
-  const [name, setName] = React.useState('');
-  const [id, setId] = React.useState(() => Date.now());
-  const [column, setColumn] = React.useState(columns[0] ?? '');
+  const [name, setName] = React.useState(initial?.JobName ?? '');
+  const [id, setId] = React.useState(() => initial?.JobID ?? Date.now());
+  const [column, setColumn] = React.useState(
+    initial?.columnId ?? columns[0] ?? ''
+  );
   React.useEffect(() => {
     if (columns.length && !column) setColumn(columns[0]);
   }, [columns]);
@@ -67,7 +77,10 @@ export function NewJobForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onCreate({ JobID: Number(id), JobName: name, Tasks: [] }, column);
+        onCreate(
+          { JobID: Number(id), JobName: name, Tasks: initial?.Tasks ?? [] },
+          column
+        );
       }}
     >
       <div className='space-y-3 p-4'>
@@ -97,7 +110,7 @@ export function NewJobForm({
           <Button variant='ghost' onClick={onCancel} type='button'>
             Cancel
           </Button>
-          <Button type='submit'>Create Job</Button>
+          <Button type='submit'>Save</Button>
         </div>
       </div>
     </form>
@@ -108,16 +121,30 @@ export function NewTaskForm({
   jobs = [],
   onCreate,
   onCancel,
+  initial,
 }: {
   jobs: any[];
   onCreate: (task: any, jobId: string | number) => void;
   onCancel: () => void;
+  initial?: {
+    TaskID?: number;
+    TaskName?: string;
+    TaskBudget?: number;
+    jobId?: string | number;
+    DueDate?: string;
+  };
 }) {
-  const [name, setName] = React.useState('');
-  const [id, setId] = React.useState(() => Date.now());
-  const [budget, setBudget] = React.useState<number | ''>('');
+  const [name, setName] = React.useState(initial?.TaskName ?? '');
+  const [id, setId] = React.useState(() => initial?.TaskID ?? Date.now());
+  const [budget, setBudget] = React.useState<number | ''>(
+    initial?.TaskBudget ?? ''
+  );
   const [jobId, setJobId] = React.useState<string>(() =>
-    jobs[0]?.JobID ? String(jobs[0].JobID) : ''
+    initial?.jobId
+      ? String(initial.jobId)
+      : jobs[0]?.JobID
+      ? String(jobs[0].JobID)
+      : ''
   );
   React.useEffect(() => {
     if (jobs.length && !jobId) setJobId(String(jobs[0].JobID));
@@ -131,6 +158,7 @@ export function NewTaskForm({
             TaskID: Number(id),
             TaskName: name,
             TaskBudget: Number(budget) || 0,
+            DueDate: initial?.DueDate,
           },
           jobId
         );
@@ -177,7 +205,7 @@ export function NewTaskForm({
           <Button variant='ghost' onClick={onCancel} type='button'>
             Cancel
           </Button>
-          <Button type='submit'>Create Task</Button>
+          <Button type='submit'>Save</Button>
         </div>
       </div>
     </form>

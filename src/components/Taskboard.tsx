@@ -17,6 +17,7 @@ import * as Data from '@/lib/data';
 
 // added imports
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import {
   Sheet,
   SheetContent,
@@ -25,18 +26,18 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet';
-import NewForms, {
+import {
   NewColumnForm,
   NewJobForm,
   NewTaskForm,
 } from '@/components/TaskboardSheets';
-// new: collapsible UI and chevron icon
+// icons
+import { ChevronDown, SquarePen, Trash2, GripVertical } from 'lucide-react';
 import {
   Collapsible,
-  CollapsibleTrigger,
   CollapsibleContent,
-} from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
+  CollapsibleTrigger,
+} from './ui/collapsible';
 
 type JobType = any;
 type TaskType = any;
@@ -96,21 +97,67 @@ function DraggableTask({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className='mb-2 p-2 bg-white dark:bg-slate-800 rounded shadow-sm flex items-center justify-between'
+      className='mb-2 p-0 rounded shadow-sm flex items-start justify-between bg-transparent'
       id={id}
     >
-      <div>
-        <div className='text-sm font-medium'>{task.TaskName}</div>
-        {task.DueDate && (
-          <div className='text-xs text-muted-foreground'>
-            Due {task.DueDate}
+      {/* left handle + content row */}
+      <div className='flex items-center w-full'>
+        {/* drag handle - visually integrated, larger hit area */}
+        <button
+          {...attributes}
+          {...listeners}
+          aria-label='Drag task'
+          className='flex items-center justify-center w-8 h-12 mr-3 rounded-l-md bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-300'
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className='h-4 w-4' />
+        </button>
+
+        <div className='flex-1 p-2 bg-gray-50 dark:bg-slate-800 rounded-r-md flex items-center justify-between'>
+          <div>
+            <div className='text-sm font-medium'>{task.TaskName}</div>
+            {task.DueDate && (
+              <div className='text-xs text-muted-foreground'>
+                Due {task.DueDate}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      <div className='text-sm font-semibold'>
-        R {(task.TaskBudget ?? 0).toLocaleString()}
+
+          <div className='flex items-center gap-2 ml-4'>
+            <div className='text-sm font-semibold'>
+              R {(task.TaskBudget ?? 0).toLocaleString()}
+            </div>
+
+            {/* small edit/delete buttons for task */}
+            <button
+              className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
+              title='Edit task'
+              onClick={(e) => {
+                e.stopPropagation();
+                const ev = new CustomEvent('task-edit', {
+                  detail: { taskId: String(task.TaskID), jobId: String(jobId) },
+                });
+                window.dispatchEvent(ev);
+              }}
+            >
+              <SquarePen className='h-4 w-4 text-xs' />
+            </button>
+
+            <button
+              className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
+              title='Delete task'
+              onClick={(e) => {
+                e.stopPropagation();
+                const ev = new CustomEvent('task-delete', {
+                  detail: { taskId: String(task.TaskID), jobId: String(jobId) },
+                });
+                window.dispatchEvent(ev);
+              }}
+            >
+              <Trash2 className='h-4 w-4 text-xs' />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -187,32 +234,82 @@ function DraggableCard({
 
   const jobTotal = sumJobTasks(job);
 
+  // actions for AppCard (edit/delete)
+  const actions = (
+    <div className='flex items-center gap-1'>
+      <button
+        className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
+        title='Edit job'
+        onClick={(e) => {
+          e.stopPropagation();
+          const ev = new CustomEvent('job-edit', {
+            detail: { jobId: String(job.JobID) },
+          });
+          window.dispatchEvent(ev);
+        }}
+      >
+        <SquarePen className='h-4 w-4 text-xs' />
+      </button>
+      <button
+        className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
+        title='Delete job'
+        onClick={(e) => {
+          e.stopPropagation();
+          const ev = new CustomEvent('job-delete', {
+            detail: { jobId: String(job.JobID) },
+          });
+          window.dispatchEvent(ev);
+        }}
+      >
+        <Trash2 className='h-4 w-4 text-xs' />
+      </button>
+    </div>
+  );
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className='mb-3'
+      className='mb-3 flex items-stretch'
       id={id}
     >
-      <AppCard
-        title={job.JobName}
-        description={
-          <span>
-            {jobTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-          </span>
-        }
-      >
-        <div className='space-y-2'>
-          {/* Use JobDroppable so dropping works even when tasks.length === 0 */}
-          <JobDroppable jobId={job.JobID}>
-            {tasks.map((t: any) => (
-              <TaskDroppableWrapper key={t.TaskID} task={t} jobId={job.JobID} />
-            ))}
-          </JobDroppable>
-        </div>
-      </AppCard>
+      {/* vertical handle visually integrated with the card */}
+      <div className='flex-shrink-0'>
+        <button
+          {...attributes}
+          {...listeners}
+          aria-label='Drag job'
+          className='w-3 rounded-l-md bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center px-1 focus:outline-none focus:ring-2 focus:ring-indigo-300'
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className='h-4 w-4 text-muted-foreground' />
+        </button>
+      </div>
+
+      <div className='flex-1'>
+        <AppCard
+          title={job.JobName}
+          description={
+            <span>
+              {jobTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </span>
+          }
+          actions={actions}
+        >
+          <div className='space-y-2'>
+            {/* Use JobDroppable so dropping works even when tasks.length === 0 */}
+            <JobDroppable jobId={job.JobID}>
+              {tasks.map((t: any) => (
+                <TaskDroppableWrapper
+                  key={t.TaskID}
+                  task={t}
+                  jobId={job.JobID}
+                />
+              ))}
+            </JobDroppable>
+          </div>
+        </AppCard>
+      </div>
     </div>
   );
 }
@@ -222,11 +319,15 @@ function Column({
   jobs,
   jobsMap,
   label,
+  isOpen,
+  onToggle,
 }: {
-  id: ColumnId;
+  id: string;
   jobs: JobType[];
   jobsMap: Record<string, JobType>;
   label?: string;
+  isOpen?: boolean;
+  onToggle?: (open: boolean) => void;
 }) {
   const droppableId = `column-${id}`;
   const { isOver, setNodeRef } = useDroppable({
@@ -235,8 +336,12 @@ function Column({
 
   const columnTotal = jobs.reduce((s, j) => s + sumJobTasks(j), 0);
 
+  // safe lookup for built-in labels — `id` may be a dynamic string so cast to a
+  // string-indexable type. This avoids the TS error about indexing COLUMN_LABELS.
+  const builtinLabel = (COLUMN_LABELS as Record<string, string>)[id];
+
   return (
-    <Collapsible defaultOpen>
+    <Collapsible open={isOpen} onOpenChange={(v) => onToggle?.(v)}>
       <div
         ref={setNodeRef}
         className={`w-full min-h-[120px] bg-white dark:bg-slate-900 border rounded p-3 flex flex-col ${
@@ -245,11 +350,44 @@ function Column({
         id={droppableId}
       >
         <CollapsibleTrigger asChild>
-          <button className='w-full flex items-center justify-between mb-3 text-left'>
+          {/* Use a non-button element as the trigger so inner edit/delete buttons can be real <button>s */}
+          <div
+            className='w-full flex items-center justify-between mb-3 text-left cursor-pointer'
+            role='button'
+            tabIndex={0}
+          >
             <div className='flex items-center gap-2'>
               <h3 className='text-sm font-semibold'>
-                {label ?? COLUMN_LABELS[id]}
+                {label ?? builtinLabel ?? id}
               </h3>
+              <div className='ml-2 flex items-center gap-1'>
+                <button
+                  className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
+                  title='Edit column'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const ev = new CustomEvent('column-edit', {
+                      detail: { columnId: id },
+                    });
+                    window.dispatchEvent(ev);
+                  }}
+                >
+                  <SquarePen className='h-4 w-4 text-xs' />
+                </button>
+                <button
+                  className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
+                  title='Delete column'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const ev = new CustomEvent('column-delete', {
+                      detail: { columnId: id },
+                    });
+                    window.dispatchEvent(ev);
+                  }}
+                >
+                  <Trash2 className='h-4 w-4 text-xs' />
+                </button>
+              </div>
             </div>
             <div className='flex items-center gap-2'>
               <div className='text-sm font-medium'>
@@ -257,7 +395,7 @@ function Column({
               </div>
               <ChevronDown className='h-4 w-4 transition-transform data-[state=open]:-rotate-180' />
             </div>
-          </button>
+          </div>
         </CollapsibleTrigger>
 
         <CollapsibleContent>
@@ -333,12 +471,138 @@ const Taskboard = () => {
     Record<string, string>
   >({});
 
-  // sheet open state
+  // sheet open state (create or edit reuse)
   const [openNewColumn, setOpenNewColumn] = React.useState(false);
   const [openNewJob, setOpenNewJob] = React.useState(false);
   const [openNewTask, setOpenNewTask] = React.useState(false);
 
+  // editing state: hold the item being edited (used to prefill forms)
+  const [editingColumn, setEditingColumn] = React.useState<{
+    columnId: string;
+    label?: string;
+  } | null>(null);
+  const [editingJob, setEditingJob] = React.useState<{
+    jobId: string;
+    initial?: any;
+    columnId?: string;
+  } | null>(null);
+  const [editingTask, setEditingTask] = React.useState<{
+    taskId: string;
+    jobId: string;
+    initial?: any;
+  } | null>(null);
+
+  // delete confirmation
+  const [openDeleteConfirm, setOpenDeleteConfirm] = React.useState(false);
+  const [deleteTarget, setDeleteTarget] = React.useState<{
+    type: 'column' | 'job' | 'task';
+    id: string;
+    parentId?: string;
+  } | null>(null);
+
+  // track open state per column so we can "collapse all / open all"
+  const [openColumns, setOpenColumns] = React.useState<Record<string, boolean>>(
+    () => {
+      const map: Record<string, boolean> = {};
+      Object.keys(columns).forEach((k) => (map[k] = true));
+      return map;
+    }
+  );
+
+  // keep openColumns in sync when columns change (new columns added)
+  React.useEffect(() => {
+    setOpenColumns((prev) => {
+      const next = { ...prev };
+      Object.keys(columns).forEach((k) => {
+        if (!(k in next)) next[k] = true;
+      });
+      // remove keys that no longer exist
+      Object.keys(next).forEach((k) => {
+        if (!(k in columns)) delete next[k];
+      });
+      return next;
+    });
+  }, [columns]);
+
   const sensors = useSensors(useSensor(PointerSensor));
+
+  // Set up global listeners for edit/delete custom events dispatched by buttons
+  React.useEffect(() => {
+    const onJobEdit = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const jobId = String(detail.jobId);
+      const job = jobsById[jobId];
+      // find column containing job
+      const col = Object.keys(columns).find((k) =>
+        (columns[k] || []).includes(jobId)
+      );
+      setEditingJob({ jobId, initial: job, columnId: col });
+      setOpenNewJob(true);
+    };
+
+    const onJobDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setDeleteTarget({ type: 'job', id: String(detail.jobId) });
+      setOpenDeleteConfirm(true);
+    };
+
+    const onTaskEdit = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const jobId = String(detail.jobId);
+      const taskId = String(detail.taskId);
+      const task = (jobsById[jobId]?.Tasks || []).find(
+        (t: any) => String(t.TaskID) === taskId
+      );
+      if (!task) return;
+      setEditingTask({ taskId, jobId, initial: task });
+      setOpenNewTask(true);
+    };
+
+    const onTaskDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setDeleteTarget({
+        type: 'task',
+        id: String(detail.taskId),
+        parentId: String(detail.jobId),
+      });
+      setOpenDeleteConfirm(true);
+    };
+
+    const onColumnEdit = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const colId = String(detail.columnId);
+      setEditingColumn({
+        columnId: colId,
+        label: extraColumnLabels[colId] ?? colId,
+      });
+      setOpenNewColumn(true);
+    };
+
+    const onColumnDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setDeleteTarget({ type: 'column', id: String(detail.columnId) });
+      setOpenDeleteConfirm(true);
+    };
+
+    window.addEventListener('job-edit', onJobEdit as EventListener);
+    window.addEventListener('job-delete', onJobDelete as EventListener);
+    window.addEventListener('task-edit', onTaskEdit as EventListener);
+    window.addEventListener('task-delete', onTaskDelete as EventListener);
+    window.addEventListener('column-edit', onColumnEdit as EventListener);
+    window.addEventListener('column-delete', onColumnDelete as EventListener);
+
+    return () => {
+      window.removeEventListener('job-edit', onJobEdit as EventListener);
+      window.removeEventListener('job-delete', onJobDelete as EventListener);
+      window.removeEventListener('task-edit', onTaskEdit as EventListener);
+      window.removeEventListener('task-delete', onTaskDelete as EventListener);
+      window.removeEventListener('column-edit', onColumnEdit as EventListener);
+      window.removeEventListener(
+        'column-delete',
+        onColumnDelete as EventListener
+      );
+    };
+  }, [jobsById, columns, extraColumnLabels]);
 
   const findContainerOfJob = (jobId: string) => {
     for (const col of Object.keys(columns)) {
@@ -548,6 +812,13 @@ const Taskboard = () => {
     setOpenNewColumn(false);
   };
 
+  // update column (rename label only)
+  const handleUpdateColumn = (columnId: string, label: string) => {
+    setExtraColumnLabels((prev) => ({ ...prev, [columnId]: label }));
+    setEditingColumn(null);
+    setOpenNewColumn(false);
+  };
+
   // create job handler
   const handleCreateJob = (
     job: { JobID: number; JobName: string; Tasks?: any[] },
@@ -567,6 +838,45 @@ const Taskboard = () => {
       //  Data.Jobs = Data.Jobs || [];
       //Data.Jobs.push({ ...job, Tasks: job.Tasks || [] });
     } catch (e) {}
+    setOpenNewJob(false);
+  };
+
+  // update job handler
+  const handleUpdateJob = (
+    job: { JobID: number; JobName: string; Tasks?: any[] },
+    columnId: string
+  ) => {
+    const id = String(job.JobID);
+    setJobsById((prev) => {
+      const next = { ...prev };
+      next[id] = {
+        ...(next[id] || {}),
+        ...job,
+        Tasks: job.Tasks || next[id]?.Tasks || [],
+      };
+      return next;
+    });
+    // move between columns if needed
+    setColumns((prev) => {
+      const next = { ...prev };
+      // remove from any column that contains it
+      Object.keys(next).forEach((k) => {
+        next[k] = next[k].filter((v) => v !== id);
+      });
+      next[columnId] = [...(next[columnId] || []), id];
+      return next;
+    });
+    // update Data.Jobs if present
+    try {
+      const idx = Data.Jobs.findIndex((j: any) => String(j.JobID) === id);
+      if (idx >= 0)
+        Data.Jobs[idx] = {
+          ...Data.Jobs[idx],
+          ...job,
+          Tasks: job.Tasks || Data.Jobs[idx].Tasks || [],
+        };
+    } catch (e) {}
+    setEditingJob(null);
     setOpenNewJob(false);
   };
 
@@ -592,59 +902,300 @@ const Taskboard = () => {
     setOpenNewTask(false);
   };
 
+  // update task handler
+  const handleUpdateTask = (task: any, targetJobId: string) => {
+    const taskId = String(task.TaskID);
+    setJobsById((prev) => {
+      const next = { ...prev };
+      const j = next[targetJobId];
+      if (!j) return prev;
+      next[targetJobId] = {
+        ...j,
+        Tasks: (j.Tasks || []).map((t: any) =>
+          String(t.TaskID) === taskId ? { ...t, ...task } : t
+        ),
+      };
+      return next;
+    });
+    // update Data.Jobs
+    try {
+      const dj = Data.Jobs.find(
+        (x: any) => String(x.JobID) === String(targetJobId)
+      );
+      if (dj) {
+        dj.Tasks = dj.Tasks || [];
+        const tIdx = dj.Tasks.findIndex(
+          (t: any) => String(t.TaskID) === taskId
+        );
+        if (tIdx >= 0) dj.Tasks[tIdx] = { ...dj.Tasks[tIdx], ...task };
+      }
+    } catch (e) {}
+    setEditingTask(null);
+    setOpenNewTask(false);
+  };
+
+  // delete handler (job/task/column)
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'job') {
+      const id = deleteTarget.id;
+      // remove job
+      setJobsById((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setColumns((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((k) => {
+          next[k] = next[k].filter((v) => v !== id);
+        });
+        return next;
+      });
+      try {
+        const idx = Data.Jobs.findIndex((j: any) => String(j.JobID) === id);
+        if (idx >= 0) Data.Jobs.splice(idx, 1);
+      } catch (e) {}
+    } else if (deleteTarget.type === 'task') {
+      const { id, parentId } = deleteTarget;
+      setJobsById((prev) => {
+        const next = { ...prev };
+        const j = next[parentId!];
+        if (!j) return prev;
+        next[parentId!] = {
+          ...j,
+          Tasks: (j.Tasks || []).filter((t: any) => String(t.TaskID) !== id),
+        };
+        return next;
+      });
+      try {
+        const dj = Data.Jobs.find(
+          (j: any) => String(j.JobID) === String(parentId)
+        );
+        if (dj)
+          dj.Tasks = (dj.Tasks || []).filter(
+            (t: any) => String(t.TaskID) !== id
+          );
+      } catch (e) {}
+    } else if (deleteTarget.type === 'column') {
+      const colId = deleteTarget.id;
+      // only delete empty columns to avoid accidental loss
+      if ((columns[colId] || []).length === 0) {
+        setColumns((prev) => {
+          const next = { ...prev };
+          delete next[colId];
+          return next;
+        });
+        setExtraColumnLabels((prev) => {
+          const next = { ...prev };
+          delete next[colId];
+          return next;
+        });
+      } else {
+        // could show toast - not deleting non-empty column
+      }
+    }
+    setDeleteTarget(null);
+    setOpenDeleteConfirm(false);
+  };
+
   return (
     <div className='w-full'>
       {/* Action bar */}
       <div className='flex items-center gap-2 mb-4'>
-        <Button onClick={() => setOpenNewColumn(true)}>+ New Column</Button>
-        <Button onClick={() => setOpenNewJob(true)}>+ New Job Card</Button>
-        <Button onClick={() => setOpenNewTask(true)}>+ New Task</Button>
+        <Button
+          onClick={() => {
+            setEditingColumn(null);
+            setOpenNewColumn(true);
+          }}
+        >
+          + New Column
+        </Button>
+        <Button
+          onClick={() => {
+            setEditingJob(null);
+            setOpenNewJob(true);
+          }}
+        >
+          + New Job Card
+        </Button>
+        <Button
+          onClick={() => {
+            setEditingTask(null);
+            setOpenNewTask(true);
+          }}
+        >
+          + New Task
+        </Button>
+
+        {/* Collapse / Open all switch */}
+        <div className='ml-auto flex items-center gap-3'>
+          <span className='text-sm text-muted-foreground'>Collapse all</span>
+          <Switch
+            checked={Object.values(openColumns).every(Boolean)}
+            onCheckedChange={(v: boolean) => {
+              // set every column open state to the switch value
+              const next: Record<string, boolean> = {};
+              Object.keys(columns).forEach((k) => (next[k] = v));
+              setOpenColumns(next);
+            }}
+            aria-label='Open or collapse all columns'
+          />
+        </div>
       </div>
 
       {/* New Column Sheet */}
-      <Sheet open={openNewColumn} onOpenChange={setOpenNewColumn}>
+      <Sheet
+        open={openNewColumn}
+        onOpenChange={(v) => {
+          if (!v) {
+            setEditingColumn(null);
+          }
+          setOpenNewColumn(v);
+        }}
+      >
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Add Column</SheetTitle>
-            <SheetDescription>Create a new board column.</SheetDescription>
+            <SheetTitle>
+              {editingColumn ? 'Edit Column' : 'Add Column'}
+            </SheetTitle>
+            <SheetDescription>
+              {editingColumn
+                ? 'Edit column label.'
+                : 'Create a new board column.'}
+            </SheetDescription>
           </SheetHeader>
           <NewColumnForm
-            onCancel={() => setOpenNewColumn(false)}
-            onCreate={(label) => handleCreateColumn(label)}
+            initial={editingColumn ? { label: editingColumn.label } : undefined}
+            onCancel={() => {
+              setOpenNewColumn(false);
+              setEditingColumn(null);
+            }}
+            onCreate={(label) => {
+              if (editingColumn)
+                handleUpdateColumn(editingColumn.columnId, label);
+              else handleCreateColumn(label);
+            }}
           />
           <SheetFooter />
         </SheetContent>
       </Sheet>
 
       {/* New Job Sheet */}
-      <Sheet open={openNewJob} onOpenChange={setOpenNewJob}>
+      <Sheet
+        open={openNewJob}
+        onOpenChange={(v) => {
+          if (!v) setEditingJob(null);
+          setOpenNewJob(v);
+        }}
+      >
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>New Job Card</SheetTitle>
-            <SheetDescription>Add a job and choose a column.</SheetDescription>
+            <SheetTitle>{editingJob ? 'Edit Job' : 'New Job Card'}</SheetTitle>
+            <SheetDescription>
+              {editingJob
+                ? 'Edit job details.'
+                : 'Add a job and choose a column.'}
+            </SheetDescription>
           </SheetHeader>
           <NewJobForm
             columns={Object.keys(columns)}
-            onCancel={() => setOpenNewJob(false)}
-            onCreate={(job, colId) => handleCreateJob(job, colId)}
+            initial={
+              editingJob
+                ? {
+                    JobID: Number(editingJob.jobId),
+                    JobName: editingJob.initial?.JobName,
+                    Tasks: editingJob.initial?.Tasks,
+                    columnId: editingJob.columnId,
+                  }
+                : undefined
+            }
+            onCancel={() => {
+              setOpenNewJob(false);
+              setEditingJob(null);
+            }}
+            onCreate={(job, colId) => {
+              if (editingJob) handleUpdateJob(job, colId);
+              else handleCreateJob(job, colId);
+            }}
           />
           <SheetFooter />
         </SheetContent>
       </Sheet>
 
       {/* New Task Sheet */}
-      <Sheet open={openNewTask} onOpenChange={setOpenNewTask}>
+      <Sheet
+        open={openNewTask}
+        onOpenChange={(v) => {
+          if (!v) setEditingTask(null);
+          setOpenNewTask(v);
+        }}
+      >
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>New Task</SheetTitle>
-            <SheetDescription>Add a task and select job.</SheetDescription>
+            <SheetTitle>{editingTask ? 'Edit Task' : 'New Task'}</SheetTitle>
+            <SheetDescription>
+              {editingTask
+                ? 'Edit task details.'
+                : 'Add a task and select job.'}
+            </SheetDescription>
           </SheetHeader>
           <NewTaskForm
             jobs={Object.values(jobsById)}
-            onCancel={() => setOpenNewTask(false)}
-            onCreate={(task, jobId) => handleCreateTask(task, String(jobId))}
+            initial={
+              editingTask
+                ? {
+                    TaskID: Number(editingTask.taskId),
+                    TaskName: editingTask.initial?.TaskName,
+                    TaskBudget: editingTask.initial?.TaskBudget,
+                    jobId: editingTask.jobId,
+                    DueDate: editingTask.initial?.DueDate,
+                  }
+                : undefined
+            }
+            onCancel={() => {
+              setOpenNewTask(false);
+              setEditingTask(null);
+            }}
+            onCreate={(task, jobId) => {
+              if (editingTask) handleUpdateTask(task, String(jobId));
+              else handleCreateTask(task, String(jobId));
+            }}
           />
           <SheetFooter />
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete confirmation sheet */}
+      <Sheet
+        open={openDeleteConfirm}
+        onOpenChange={(v) => {
+          if (!v) setDeleteTarget(null);
+          setOpenDeleteConfirm(v);
+        }}
+      >
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Confirm delete</SheetTitle>
+            <SheetDescription>
+              Are you sure you want to delete this{' '}
+              {deleteTarget?.type ?? 'item'}?
+            </SheetDescription>
+          </SheetHeader>
+          <div className='p-4 flex justify-end gap-2'>
+            <Button
+              variant='ghost'
+              onClick={() => {
+                setOpenDeleteConfirm(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmDelete} className='bg-destructive'>
+              Delete
+            </Button>
+          </div>
         </SheetContent>
       </Sheet>
 
@@ -665,10 +1216,14 @@ const Taskboard = () => {
             return (
               <Column
                 key={colId}
-                id={colId as ColumnId}
+                id={colId}
                 jobs={jobs}
                 jobsMap={jobsById}
                 label={label}
+                isOpen={!!openColumns[colId]}
+                onToggle={(open) =>
+                  setOpenColumns((prev) => ({ ...prev, [colId]: open }))
+                }
               />
             );
           })}
