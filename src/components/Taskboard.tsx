@@ -30,6 +30,13 @@ import NewForms, {
   NewJobForm,
   NewTaskForm,
 } from '@/components/TaskboardSheets';
+// new: collapsible UI and chevron icon
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 type JobType = any;
 type TaskType = any;
@@ -214,10 +221,12 @@ function Column({
   id,
   jobs,
   jobsMap,
+  label,
 }: {
   id: ColumnId;
   jobs: JobType[];
   jobsMap: Record<string, JobType>;
+  label?: string;
 }) {
   const droppableId = `column-${id}`;
   const { isOver, setNodeRef } = useDroppable({
@@ -227,30 +236,44 @@ function Column({
   const columnTotal = jobs.reduce((s, j) => s + sumJobTasks(j), 0);
 
   return (
-    <div
-      ref={setNodeRef}
-      className={`w-full min-h-[120px] bg-white dark:bg-slate-900 border rounded p-3 flex flex-col ${
-        isOver ? 'ring-2 ring-indigo-400' : ''
-      }`}
-      id={droppableId}
-    >
-      <div className='flex items-center justify-between mb-3'>
-        <h3 className='text-sm font-semibold'>{COLUMN_LABELS[id]}</h3>
-        <div className='text-sm font-medium'>
-          R {columnTotal.toLocaleString()}
-        </div>
+    <Collapsible defaultOpen>
+      <div
+        ref={setNodeRef}
+        className={`w-full min-h-[120px] bg-white dark:bg-slate-900 border rounded p-3 flex flex-col ${
+          isOver ? 'ring-2 ring-indigo-400' : ''
+        }`}
+        id={droppableId}
+      >
+        <CollapsibleTrigger asChild>
+          <button className='w-full flex items-center justify-between mb-3 text-left'>
+            <div className='flex items-center gap-2'>
+              <h3 className='text-sm font-semibold'>
+                {label ?? COLUMN_LABELS[id]}
+              </h3>
+            </div>
+            <div className='flex items-center gap-2'>
+              <div className='text-sm font-medium'>
+                R {columnTotal.toLocaleString()}
+              </div>
+              <ChevronDown className='h-4 w-4 transition-transform data-[state=open]:-rotate-180' />
+            </div>
+          </button>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className='flex-1 space-y-3'>
+            {jobs.map((job) => (
+              <DraggableCard
+                key={job.JobID}
+                job={job}
+                id={`job-${job.JobID}`}
+                tasks={job.Tasks || []}
+              />
+            ))}
+          </div>
+        </CollapsibleContent>
       </div>
-      <div className='flex-1 space-y-3'>
-        {jobs.map((job) => (
-          <DraggableCard
-            key={job.JobID}
-            job={job}
-            id={`job-${job.JobID}`}
-            tasks={job.Tasks || []}
-          />
-        ))}
-      </div>
-    </div>
+    </Collapsible>
   );
 }
 
@@ -409,14 +432,19 @@ const Taskboard = () => {
               (j: any) => String(j.JobID) === destJobId
             );
             if (dataJobSrc && dataJobDest) {
-              const moved = dataJobSrc.Tasks.splice(
-                dataJobSrc.Tasks.findIndex(
+              const moved = {
+                ...(dataJobSrc.Tasks.find(
                   (t: any) => String(t.TaskID) === activeTaskId
-                ),
-                1
-              )[0];
+                ) as {
+                  TaskID: number;
+                  TaskName: string;
+                  DueDate: string;
+                  TaskBudget: number;
+                }),
+                TaskBudget: 0,
+              };
               dataJobDest.Tasks = dataJobDest.Tasks || [];
-              // dataJobDest.Tasks.push(moved);
+              dataJobDest.Tasks.push(moved);
             }
           } catch (e) {
             // ignore module mutation errors
@@ -536,7 +564,7 @@ const Taskboard = () => {
     }));
     // update module data (in-memory)
     try {
-    //  Data.Jobs = Data.Jobs || [];
+      //  Data.Jobs = Data.Jobs || [];
       //Data.Jobs.push({ ...job, Tasks: job.Tasks || [] });
     } catch (e) {}
     setOpenNewJob(false);
@@ -640,6 +668,7 @@ const Taskboard = () => {
                 id={colId as ColumnId}
                 jobs={jobs}
                 jobsMap={jobsById}
+                label={label}
               />
             );
           })}
