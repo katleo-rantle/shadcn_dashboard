@@ -1,3 +1,4 @@
+// @/components/Taskboard.tsx
 'use client';
 
 import React from 'react';
@@ -12,26 +13,26 @@ import {
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
 import { useDroppable } from '@dnd-kit/core';
-import { Jobs as initialJobs } from '@/lib/data';
-import * as Data from '@/lib/data';
+import { tasks } from '@/lib/data';
+import { useProject } from '@/context/ProjectContext';
+import type { Job } from '@/lib/types';
 
-// added imports
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   NewColumnForm,
   NewJobForm,
   NewTaskForm,
 } from '@/components/TaskboardSheets';
-// icons
+
 import { ChevronDown, SquarePen, Trash2, GripVertical } from 'lucide-react';
 import {
   Collapsible,
@@ -39,8 +40,8 @@ import {
   CollapsibleTrigger,
 } from './ui/collapsible';
 
-type JobType = any;
-type TaskType = any;
+// === Types ===
+type JobWithTasks = Job & { Tasks: any[] };
 type ColumnId =
   | 'site-preparation'
   | 'foundation'
@@ -67,21 +68,13 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
   finishing: 'Finishing',
 };
 
-function sumJobTasks(job: JobType) {
-  return (job.Tasks || []).reduce(
-    (s: number, t: any) => s + (t.TaskBudget ?? 0),
-    0
-  );
-}
+// === Helpers ===
+const tasksForJob = (jobId: number) => tasks.filter((t) => t.JobID === jobId);
+const sumJobTasks = (job: JobWithTasks) =>
+  job.Tasks.reduce((s, t: any) => s + (t.TaskBudget ?? 0), 0);
 
-/* Task (draggable) */
-function DraggableTask({
-  task,
-  jobId,
-}: {
-  task: TaskType;
-  jobId: number | string;
-}) {
+// === Draggable Task ===
+function DraggableTask({ task, jobId }: { task: any; jobId: number }) {
   const id = `task-${task.TaskID}-job-${jobId}`;
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id });
@@ -100,9 +93,7 @@ function DraggableTask({
       className='mb-2 p-0 rounded shadow-sm flex items-start justify-between bg-transparent'
       id={id}
     >
-      {/* left handle + content row */}
       <div className='flex items-center w-full'>
-        {/* drag handle - visually integrated, larger hit area */}
         <button
           {...attributes}
           {...listeners}
@@ -128,16 +119,18 @@ function DraggableTask({
               R {(task.TaskBudget ?? 0).toLocaleString()}
             </div>
 
-            {/* small edit/delete buttons for task */}
             <button
               className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
-              title='Edit task'
               onClick={(e) => {
                 e.stopPropagation();
-                const ev = new CustomEvent('task-edit', {
-                  detail: { taskId: String(task.TaskID), jobId: String(jobId) },
-                });
-                window.dispatchEvent(ev);
+                window.dispatchEvent(
+                  new CustomEvent('task-edit', {
+                    detail: {
+                      taskId: String(task.TaskID),
+                      jobId: String(jobId),
+                    },
+                  })
+                );
               }}
             >
               <SquarePen className='h-4 w-4 text-xs' />
@@ -145,13 +138,16 @@ function DraggableTask({
 
             <button
               className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
-              title='Delete task'
               onClick={(e) => {
                 e.stopPropagation();
-                const ev = new CustomEvent('task-delete', {
-                  detail: { taskId: String(task.TaskID), jobId: String(jobId) },
-                });
-                window.dispatchEvent(ev);
+                window.dispatchEvent(
+                  new CustomEvent('task-delete', {
+                    detail: {
+                      taskId: String(task.TaskID),
+                      jobId: String(jobId),
+                    },
+                  })
+                );
               }}
             >
               <Trash2 className='h-4 w-4 text-xs' />
@@ -163,17 +159,9 @@ function DraggableTask({
   );
 }
 
-/* Task droppable wrapper (so we can drop before a task) */
-function TaskDroppableWrapper({
-  task,
-  jobId,
-}: {
-  task: TaskType;
-  jobId: number | string;
-}) {
+function TaskDroppableWrapper({ task, jobId }: { task: any; jobId: number }) {
   const droppableId = `task-${task.TaskID}-job-${jobId}`;
   const { isOver, setNodeRef } = useDroppable({ id: droppableId });
-
   return (
     <div
       ref={setNodeRef}
@@ -184,46 +172,39 @@ function TaskDroppableWrapper({
   );
 }
 
-/* NEW: droppable wrapper for entire job (so you can drop onto empty job) */
 function JobDroppable({
   jobId,
   children,
 }: {
-  jobId: number | string;
+  jobId: number;
   children: React.ReactNode;
 }) {
   const droppableId = `job-drop-${jobId}`;
   const { isOver, setNodeRef } = useDroppable({ id: droppableId });
-
   return (
     <div
       ref={setNodeRef}
       className={`space-y-2 min-h-[48px] ${
         isOver ? 'ring-2 ring-indigo-300 rounded' : ''
       }`}
-      id={droppableId}
     >
       {children}
-      {/* placeholder to ensure area is droppable even when empty */}
       <div className='h-2' />
     </div>
   );
 }
 
-/* Draggable job card with a droppable area for tasks (id: job-drop-<JobID>) */
 function DraggableCard({
   job,
   id,
   tasks,
 }: {
-  job: JobType;
+  job: JobWithTasks;
   id: string;
-  tasks: TaskType[];
+  tasks: any[];
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id,
-    });
+    useDraggable({ id });
 
   const style: React.CSSProperties = {
     transform: transform
@@ -234,38 +215,6 @@ function DraggableCard({
 
   const jobTotal = sumJobTasks(job);
 
-  // actions for AppCard (edit/delete)
-  const actions = (
-    <div className='flex items-center gap-1'>
-      <button
-        className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
-        title='Edit job'
-        onClick={(e) => {
-          e.stopPropagation();
-          const ev = new CustomEvent('job-edit', {
-            detail: { jobId: String(job.JobID) },
-          });
-          window.dispatchEvent(ev);
-        }}
-      >
-        <SquarePen className='h-4 w-4 text-xs' />
-      </button>
-      <button
-        className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
-        title='Delete job'
-        onClick={(e) => {
-          e.stopPropagation();
-          const ev = new CustomEvent('job-delete', {
-            detail: { jobId: String(job.JobID) },
-          });
-          window.dispatchEvent(ev);
-        }}
-      >
-        <Trash2 className='h-4 w-4 text-xs' />
-      </button>
-    </div>
-  );
-
   return (
     <div
       ref={setNodeRef}
@@ -273,41 +222,56 @@ function DraggableCard({
       className='mb-3 flex items-stretch'
       id={id}
     >
-      {/* vertical handle visually integrated with the card */}
-      <div className='flex-shrink-0'>
-        <button
-          {...attributes}
-          {...listeners}
-          aria-label='Drag job'
-          className='w-3 rounded-l-md bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center px-1 focus:outline-none focus:ring-2 focus:ring-indigo-300'
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical className='h-4 w-4 text-muted-foreground' />
-        </button>
-      </div>
+      <button
+        {...attributes}
+        {...listeners}
+        aria-label='Drag job'
+        className='w-3 rounded-l-md bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center px-1 focus:outline-none focus:ring-2 focus:ring-indigo-300'
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className='h-4 w-4 text-muted-foreground' />
+      </button>
 
       <div className='flex-1'>
         <AppCard
           title={job.JobName}
-          description={
-            <span>
-              {jobTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-            </span>
+          description={`R ${jobTotal.toLocaleString()}`}
+          actions={
+            <div className='flex items-center gap-1'>
+              <button
+                className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(
+                    new CustomEvent('job-edit', {
+                      detail: { jobId: String(job.JobID) },
+                    })
+                  );
+                }}
+              >
+                <SquarePen className='h-4 w-4 text-xs' />
+              </button>
+              <button
+                className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(
+                    new CustomEvent('job-delete', {
+                      detail: { jobId: String(job.JobID) },
+                    })
+                  );
+                }}
+              >
+                <Trash2 className='h-4 w-4 text-xs' />
+              </button>
+            </div>
           }
-          actions={actions}
         >
-          <div className='space-y-2'>
-            {/* Use JobDroppable so dropping works even when tasks.length === 0 */}
-            <JobDroppable jobId={job.JobID}>
-              {tasks.map((t: any) => (
-                <TaskDroppableWrapper
-                  key={t.TaskID}
-                  task={t}
-                  jobId={job.JobID}
-                />
-              ))}
-            </JobDroppable>
-          </div>
+          <JobDroppable jobId={job.JobID}>
+            {tasks.map((t) => (
+              <TaskDroppableWrapper key={t.TaskID} task={t} jobId={job.JobID} />
+            ))}
+          </JobDroppable>
         </AppCard>
       </div>
     </div>
@@ -317,72 +281,59 @@ function DraggableCard({
 function Column({
   id,
   jobs,
-  jobsMap,
   label,
   isOpen,
   onToggle,
 }: {
   id: string;
-  jobs: JobType[];
-  jobsMap: Record<string, JobType>;
-  label?: string;
-  isOpen?: boolean;
-  onToggle?: (open: boolean) => void;
+  jobs: JobWithTasks[];
+  label: string;
+  isOpen: boolean;
+  onToggle: (open: boolean) => void;
 }) {
   const droppableId = `column-${id}`;
-  const { isOver, setNodeRef } = useDroppable({
-    id: droppableId,
-  });
-
+  const { isOver, setNodeRef } = useDroppable({ id: droppableId });
   const columnTotal = jobs.reduce((s, j) => s + sumJobTasks(j), 0);
 
-  // safe lookup for built-in labels — `id` may be a dynamic string so cast to a
-  // string-indexable type. This avoids the TS error about indexing COLUMN_LABELS.
-  const builtinLabel = (COLUMN_LABELS as Record<string, string>)[id];
-
   return (
-    <Collapsible open={isOpen} onOpenChange={(v) => onToggle?.(v)}>
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
       <div
         ref={setNodeRef}
         className={`w-full min-h-[120px] bg-white dark:bg-slate-900 border rounded p-3 flex flex-col ${
           isOver ? 'ring-2 ring-indigo-400' : ''
         }`}
-        id={droppableId}
       >
         <CollapsibleTrigger asChild>
-          {/* Use a non-button element as the trigger so inner edit/delete buttons can be real <button>s */}
           <div
             className='w-full flex items-center justify-between mb-3 text-left cursor-pointer'
             role='button'
             tabIndex={0}
           >
             <div className='flex items-center gap-2'>
-              <h3 className='text-sm font-semibold'>
-                {label ?? builtinLabel ?? id}
-              </h3>
+              <h3 className='text-sm font-semibold'>{label}</h3>
               <div className='ml-2 flex items-center gap-1'>
                 <button
                   className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
-                  title='Edit column'
                   onClick={(e) => {
                     e.stopPropagation();
-                    const ev = new CustomEvent('column-edit', {
-                      detail: { columnId: id },
-                    });
-                    window.dispatchEvent(ev);
+                    window.dispatchEvent(
+                      new CustomEvent('column-edit', {
+                        detail: { columnId: id },
+                      })
+                    );
                   }}
                 >
                   <SquarePen className='h-4 w-4 text-xs' />
                 </button>
                 <button
                   className='p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800'
-                  title='Delete column'
                   onClick={(e) => {
                     e.stopPropagation();
-                    const ev = new CustomEvent('column-delete', {
-                      detail: { columnId: id },
-                    });
-                    window.dispatchEvent(ev);
+                    window.dispatchEvent(
+                      new CustomEvent('column-delete', {
+                        detail: { columnId: id },
+                      })
+                    );
                   }}
                 >
                   <Trash2 className='h-4 w-4 text-xs' />
@@ -405,7 +356,7 @@ function Column({
                 key={job.JobID}
                 job={job}
                 id={`job-${job.JobID}`}
-                tasks={job.Tasks || []}
+                tasks={job.Tasks}
               />
             ))}
           </div>
@@ -415,68 +366,80 @@ function Column({
   );
 }
 
-const distributeInitial = (jobs: JobType[]) => {
-  const cols: Record<string, string[]> = {};
-  for (const c of COLUMN_ORDER) cols[c] = [];
+const distributeInitial = (
+  jobs: JobWithTasks[]
+): Record<ColumnId, string[]> => {
+  const cols: Partial<Record<ColumnId, string[]>> = {};
+  COLUMN_ORDER.forEach((c) => (cols[c] = []));
 
   for (const job of jobs) {
     const name = (job.JobName || '').toLowerCase();
-    if (
-      name.includes('excavate') ||
-      name.includes('site') ||
-      name.includes('prep')
-    ) {
-      cols['site-preparation'].push(String(job.JobID));
-    } else if (name.includes('foundation')) {
-      cols['foundation'].push(String(job.JobID));
-    } else if (name.includes('steel') || name.includes('struct')) {
-      cols['superstructure'].push(String(job.JobID));
-    } else if (name.includes('roof')) {
-      cols['roof'].push(String(job.JobID));
-    } else if (
-      name.includes('cabinet') ||
-      name.includes('interior') ||
-      name.includes('install')
-    ) {
-      cols['interior'].push(String(job.JobID));
-    } else {
-      cols['finishing'].push(String(job.JobID));
+    let assigned = false;
+    for (const col of COLUMN_ORDER) {
+      if (
+        (col === 'site-preparation' &&
+          (name.includes('excavate') || name.includes('site'))) ||
+        (col === 'foundation' && name.includes('foundation')) ||
+        (col === 'superstructure' &&
+          (name.includes('steel') || name.includes('struct'))) ||
+        (col === 'roof' && name.includes('roof')) ||
+        (col === 'interior' &&
+          (name.includes('cabinet') || name.includes('interior'))) ||
+        (col === 'finishing' && !assigned)
+      ) {
+        cols[col]!.push(String(job.JobID));
+        assigned = true;
+        break;
+      }
     }
+    if (!assigned) cols['finishing']!.push(String(job.JobID));
   }
   return cols as Record<ColumnId, string[]>;
 };
 
+// === Main Component ===
 const Taskboard = () => {
-  // jobsById to hold job objects and allow updating Tasks lists
-  const [jobsById, setJobsById] = React.useState<Record<string, JobType>>(
+  const { jobsForSelectedProject } = useProject();
+
+  // === Join jobs + tasks ===
+  const [jobsWithTasks, setJobsWithTasks] = React.useState<JobWithTasks[]>(() =>
+    jobsForSelectedProject.map((job) => ({
+      ...job,
+      Tasks: tasksForJob(job.JobID),
+    }))
+  );
+
+  React.useEffect(() => {
+    setJobsWithTasks(
+      jobsForSelectedProject.map((job) => ({
+        ...job,
+        Tasks: tasksForJob(job.JobID),
+      }))
+    );
+  }, [jobsForSelectedProject]);
+
+  const [jobsById, setJobsById] = React.useState<Record<string, JobWithTasks>>(
     () => {
-      const map: Record<string, JobType> = {};
-      initialJobs.forEach((j: any) => {
-        map[String(j.JobID)] = {
-          ...j,
-          Tasks: (j.Tasks || []).map((t: any) => ({ ...t })),
-        };
-      });
+      const map: Record<string, JobWithTasks> = {};
+      jobsWithTasks.forEach((j) => (map[String(j.JobID)] = { ...j }));
       return map;
     }
   );
 
-  // allow arbitrary column keys now
   const [columns, setColumns] = React.useState<Record<string, string[]>>(() =>
-    distributeInitial(initialJobs)
+    distributeInitial(jobsWithTasks)
   );
 
-  // store any added column labels
   const [extraColumnLabels, setExtraColumnLabels] = React.useState<
     Record<string, string>
   >({});
 
-  // sheet open state (create or edit reuse)
-  const [openNewColumn, setOpenNewColumn] = React.useState(false);
-  const [openNewJob, setOpenNewJob] = React.useState(false);
-  const [openNewTask, setOpenNewTask] = React.useState(false);
+  // Dialog states
+  const [openColumnDialog, setOpenColumnDialog] = React.useState(false);
+  const [openJobDialog, setOpenJobDialog] = React.useState(false);
+  const [openTaskDialog, setOpenTaskDialog] = React.useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = React.useState(false);
 
-  // editing state: hold the item being edited (used to prefill forms)
   const [editingColumn, setEditingColumn] = React.useState<{
     columnId: string;
     label?: string;
@@ -491,16 +454,12 @@ const Taskboard = () => {
     jobId: string;
     initial?: any;
   } | null>(null);
-
-  // delete confirmation
-  const [openDeleteConfirm, setOpenDeleteConfirm] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState<{
     type: 'column' | 'job' | 'task';
     id: string;
     parentId?: string;
   } | null>(null);
 
-  // track open state per column so we can "collapse all / open all"
   const [openColumns, setOpenColumns] = React.useState<Record<string, boolean>>(
     () => {
       const map: Record<string, boolean> = {};
@@ -509,14 +468,10 @@ const Taskboard = () => {
     }
   );
 
-  // keep openColumns in sync when columns change (new columns added)
   React.useEffect(() => {
     setOpenColumns((prev) => {
       const next = { ...prev };
-      Object.keys(columns).forEach((k) => {
-        if (!(k in next)) next[k] = true;
-      });
-      // remove keys that no longer exist
+      Object.keys(columns).forEach((k) => (next[k] ??= true));
       Object.keys(next).forEach((k) => {
         if (!(k in columns)) delete next[k];
       });
@@ -524,97 +479,94 @@ const Taskboard = () => {
     });
   }, [columns]);
 
+  React.useEffect(() => {
+    const map: Record<string, JobWithTasks> = {};
+    jobsWithTasks.forEach((j) => (map[String(j.JobID)] = { ...j }));
+    setJobsById(map);
+    setColumns(distributeInitial(jobsWithTasks));
+  }, [jobsWithTasks]);
+
   const sensors = useSensors(useSensor(PointerSensor));
 
-  // Set up global listeners for edit/delete custom events dispatched by buttons
+  // === Event Listeners ===
   React.useEffect(() => {
-    const onJobEdit = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      const jobId = String(detail.jobId);
-      const job = jobsById[jobId];
-      // find column containing job
-      const col = Object.keys(columns).find((k) =>
-        (columns[k] || []).includes(jobId)
-      );
-      setEditingJob({ jobId, initial: job, columnId: col });
-      setOpenNewJob(true);
-    };
-
-    const onJobDelete = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      setDeleteTarget({ type: 'job', id: String(detail.jobId) });
-      setOpenDeleteConfirm(true);
-    };
-
-    const onTaskEdit = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      const jobId = String(detail.jobId);
-      const taskId = String(detail.taskId);
-      const task = (jobsById[jobId]?.Tasks || []).find(
-        (t: any) => String(t.TaskID) === taskId
-      );
-      if (!task) return;
-      setEditingTask({ taskId, jobId, initial: task });
-      setOpenNewTask(true);
-    };
-
-    const onTaskDelete = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      setDeleteTarget({
-        type: 'task',
-        id: String(detail.taskId),
-        parentId: String(detail.jobId),
-      });
-      setOpenDeleteConfirm(true);
-    };
-
-    const onColumnEdit = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      const colId = String(detail.columnId);
-      setEditingColumn({
-        columnId: colId,
-        label: extraColumnLabels[colId] ?? colId,
-      });
-      setOpenNewColumn(true);
-    };
-
-    const onColumnDelete = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      setDeleteTarget({ type: 'column', id: String(detail.columnId) });
-      setOpenDeleteConfirm(true);
-    };
-
-    window.addEventListener('job-edit', onJobEdit as EventListener);
-    window.addEventListener('job-delete', onJobDelete as EventListener);
-    window.addEventListener('task-edit', onTaskEdit as EventListener);
-    window.addEventListener('task-delete', onTaskDelete as EventListener);
-    window.addEventListener('column-edit', onColumnEdit as EventListener);
-    window.addEventListener('column-delete', onColumnDelete as EventListener);
-
-    return () => {
-      window.removeEventListener('job-edit', onJobEdit as EventListener);
-      window.removeEventListener('job-delete', onJobDelete as EventListener);
-      window.removeEventListener('task-edit', onTaskEdit as EventListener);
-      window.removeEventListener('task-delete', onTaskDelete as EventListener);
-      window.removeEventListener('column-edit', onColumnEdit as EventListener);
-      window.removeEventListener(
+    const listeners = [
+      [
+        'job-edit',
+        (e: Event) => {
+          const { jobId } = (e as CustomEvent).detail;
+          const job = jobsById[jobId];
+          const col = Object.keys(columns).find((k) =>
+            columns[k].includes(jobId)
+          );
+          setEditingJob({ jobId, initial: job, columnId: col });
+          setOpenJobDialog(true);
+        },
+      ],
+      [
+        'job-delete',
+        (e: Event) => {
+          setDeleteTarget({ type: 'job', id: (e as CustomEvent).detail.jobId });
+          setOpenDeleteDialog(true);
+        },
+      ],
+      [
+        'task-edit',
+        (e: Event) => {
+          const { taskId, jobId } = (e as CustomEvent).detail;
+          const task = jobsById[jobId]?.Tasks.find(
+            (t: any) => String(t.TaskID) === taskId
+          );
+          if (task) {
+            setEditingTask({ taskId, jobId, initial: task });
+            setOpenTaskDialog(true);
+          }
+        },
+      ],
+      [
+        'task-delete',
+        (e: Event) => {
+          const { taskId, jobId } = (e as CustomEvent).detail;
+          setDeleteTarget({ type: 'task', id: taskId, parentId: jobId });
+          setOpenDeleteDialog(true);
+        },
+      ],
+      [
+        'column-edit',
+        (e: Event) => {
+          const { columnId } = (e as CustomEvent).detail;
+          setEditingColumn({
+            columnId,
+            label: extraColumnLabels[columnId] ?? columnId,
+          });
+          setOpenColumnDialog(true);
+        },
+      ],
+      [
         'column-delete',
-        onColumnDelete as EventListener
+        (e: Event) => {
+          setDeleteTarget({
+            type: 'column',
+            id: (e as CustomEvent).detail.columnId,
+          });
+          setOpenDeleteDialog(true);
+        },
+      ],
+    ] as const;
+
+    listeners.forEach(([name, handler]) =>
+      window.addEventListener(name, handler as EventListener)
+    );
+    return () =>
+      listeners.forEach(([name, handler]) =>
+        window.removeEventListener(name, handler as EventListener)
       );
-    };
   }, [jobsById, columns, extraColumnLabels]);
 
-  const findContainerOfJob = (jobId: string) => {
+  // === Drag Logic ===
+  const findContainerOfJob = (jobId: string): string | null => {
     for (const col of Object.keys(columns)) {
-      if (columns[col as ColumnId].includes(jobId)) return col as ColumnId;
-    }
-    return null;
-  };
-
-  const findContainerOfTask = (taskId: string) => {
-    for (const jobId of Object.keys(jobsById)) {
-      const tasks = jobsById[jobId].Tasks || [];
-      if (tasks.some((t: any) => String(t.TaskID) === taskId)) return jobId;
+      if (columns[col].includes(jobId)) return col;
     }
     return null;
   };
@@ -624,389 +576,175 @@ const Taskboard = () => {
     if (!over) return;
 
     const activeId = String(active.id);
-    const overIdRaw = String(over.id);
+    const overId = String(over.id);
 
-    // JOB drag (existing behavior): job-<JobID>
     if (activeId.startsWith('job-')) {
-      const activeJobId = activeId.replace(/^job-/, '');
-      if (overIdRaw.startsWith('column-')) {
-        const destCol = overIdRaw.replace(/^column-/, '') as ColumnId;
-        const srcCol = findContainerOfJob(activeJobId);
-        if (!srcCol) return;
-        setColumns((prev) => {
-          const next = { ...prev };
-          next[srcCol] = next[srcCol].filter((i) => i !== activeJobId);
-          next[destCol] = [...next[destCol], activeJobId];
-          return next;
-        });
-        return;
-      }
-      if (overIdRaw.startsWith('job-')) {
-        const overJobId = overIdRaw.replace(/^job-/, '');
-        const srcCol = findContainerOfJob(activeJobId);
-        const destCol = findContainerOfJob(overJobId);
-        if (!srcCol || !destCol) return;
+      const jobId = activeId.replace('job-', '');
+      const srcCol = findContainerOfJob(jobId);
+      if (!srcCol) return;
 
-        setColumns((prev) => {
-          const next = { ...prev };
-          next[srcCol] = next[srcCol].filter((i) => i !== activeJobId);
-          const destArr = Array.from(next[destCol]);
-          const idx = destArr.indexOf(overJobId);
-          destArr.splice(idx >= 0 ? idx : destArr.length, 0, activeJobId);
-          next[destCol] = destArr;
-          return next;
-        });
-        return;
+      if (overId.startsWith('column-')) {
+        const destCol = overId.replace('column-', '');
+        setColumns((prev) => ({
+          ...prev,
+          [srcCol]: prev[srcCol].filter((id) => id !== jobId),
+          [destCol]: [...prev[destCol], jobId],
+        }));
       }
     }
 
-    // TASK drag: id format task-<TaskID>-job-<JobID>
     if (activeId.startsWith('task-')) {
-      const [, taskPart, , srcJobPart] = activeId.split('-'); // ["task","<TaskID>","job","<JobID>"]
-      const activeTaskId = taskPart;
-      const srcJobId = srcJobPart;
-      // dropped on a column (append to first job in that column) - prefer job-drop or job-xxx targets
-      if (overIdRaw.startsWith('job-drop-')) {
-        const destJobId = overIdRaw.replace(/^job-drop-/, '');
-        if (srcJobId === destJobId) return; // same job, no-op
-        setJobsById((prev) => {
-          const next = { ...prev };
-          const taskObj = next[srcJobId].Tasks.find(
-            (t: any) => String(t.TaskID) === activeTaskId
-          );
-          if (!taskObj) return prev;
-          // remove from src
-          next[srcJobId] = {
-            ...next[srcJobId],
-            Tasks: next[srcJobId].Tasks.filter(
-              (t: any) => String(t.TaskID) !== activeTaskId
-            ),
-          };
-          // append to dest
-          next[destJobId] = {
-            ...next[destJobId],
-            Tasks: [...(next[destJobId].Tasks || []), taskObj],
-          };
-          // also update module data export
-          try {
-            const dataJobSrc = Data.Jobs.find(
-              (j: any) => String(j.JobID) === srcJobId
-            );
-            const dataJobDest = Data.Jobs.find(
-              (j: any) => String(j.JobID) === destJobId
-            );
-            if (dataJobSrc && dataJobDest) {
-              const moved = {
-                ...(dataJobSrc.Tasks.find(
-                  (t: any) => String(t.TaskID) === activeTaskId
-                ) as {
-                  TaskID: number;
-                  TaskName: string;
-                  DueDate: string;
-                  TaskBudget: number;
-                }),
-                TaskBudget: 0,
-              };
-              dataJobDest.Tasks = dataJobDest.Tasks || [];
-              dataJobDest.Tasks.push(moved);
-            }
-          } catch (e) {
-            // ignore module mutation errors
-          }
-          return next;
-        });
-        return;
-      }
-
-      // dropped on a task (insert before the target task)
-      if (overIdRaw.startsWith('task-')) {
-        // overIdRaw example: task-1003-job-102
-        const [, overTaskPart, , overJobPart] = overIdRaw.split('-');
-        const overTaskId = overTaskPart;
-        const destJobId = overJobPart;
+      const [, taskId, , srcJobId] = activeId.split('-');
+      if (overId.startsWith('job-drop-')) {
+        const destJobId = overId.replace('job-drop-', '');
+        if (srcJobId === destJobId) return;
 
         setJobsById((prev) => {
-          const next = { ...prev };
-          const srcTasks = next[srcJobId].Tasks || [];
-          const taskIndex = srcTasks.findIndex(
-            (t: any) => String(t.TaskID) === activeTaskId
+          const task = prev[srcJobId].Tasks.find(
+            (t: any) => String(t.TaskID) === taskId
           );
-          if (taskIndex === -1) return prev;
-          const [taskObj] = srcTasks.splice(taskIndex, 1); // remove from source
-          // if moving within same job and target index is after removal adjust index accordingly
-          if (srcJobId === destJobId) {
-            const destTasks = next[destJobId].Tasks || [];
-            const insertIdx = destTasks.findIndex(
-              (t: any) => String(t.TaskID) === overTaskId
-            );
-            destTasks.splice(
-              insertIdx >= 0 ? insertIdx : destTasks.length,
-              0,
-              taskObj
-            );
-            next[destJobId] = { ...next[destJobId], Tasks: destTasks };
-          } else {
-            const destTasks = next[destJobId].Tasks
-              ? [...next[destJobId].Tasks]
-              : [];
-            const insertIdx = destTasks.findIndex(
-              (t: any) => String(t.TaskID) === overTaskId
-            );
-            destTasks.splice(
-              insertIdx >= 0 ? insertIdx : destTasks.length,
-              0,
-              taskObj
-            );
-            next[srcJobId] = { ...next[srcJobId], Tasks: srcTasks };
-            next[destJobId] = { ...next[destJobId], Tasks: destTasks };
-          }
-
-          // update module data export
-          try {
-            const dataJobSrc = Data.Jobs.find(
-              (j: any) => String(j.JobID) === srcJobId
-            );
-            const dataJobDest = Data.Jobs.find(
-              (j: any) => String(j.JobID) === destJobId
-            );
-            if (dataJobSrc) {
-              const moved = dataJobSrc.Tasks.splice(
-                dataJobSrc.Tasks.findIndex(
-                  (t: any) => String(t.TaskID) === activeTaskId
-                ),
-                1
-              )[0];
-              if (dataJobDest) {
-                dataJobDest.Tasks = dataJobDest.Tasks || [];
-                const insertIdx = dataJobDest.Tasks.findIndex(
-                  (t: any) => String(t.TaskID) === overTaskId
-                );
-                dataJobDest.Tasks.splice(
-                  insertIdx >= 0 ? insertIdx : dataJobDest.Tasks.length,
-                  0,
-                  moved
-                );
-              }
-            }
-          } catch (e) {
-            // ignore
-          }
-
-          return next;
+          if (!task) return prev;
+          return {
+            ...prev,
+            [srcJobId]: {
+              ...prev[srcJobId],
+              Tasks: prev[srcJobId].Tasks.filter(
+                (t: any) => String(t.TaskID) !== taskId
+              ),
+            },
+            [destJobId]: {
+              ...prev[destJobId],
+              Tasks: [...(prev[destJobId].Tasks || []), task],
+            },
+          };
         });
-        return;
       }
     }
   };
 
-  // create column handler
+  // === Handlers ===
   const handleCreateColumn = (label: string) => {
-    const base = label.trim().toLowerCase().replace(/\s+/g, '-');
-    let slug = base;
+    const slug = label.toLowerCase().replace(/\s+/g, '-');
+    let id = slug;
     let i = 1;
-    while (columns[slug]) {
-      slug = `${base}-${i++}`;
-    }
-    setColumns((prev) => ({ ...prev, [slug]: [] }));
-    setExtraColumnLabels((prev) => ({ ...prev, [slug]: label }));
-    setOpenNewColumn(false);
+    while (columns[id]) id = `${slug}-${i++}`;
+    setColumns((prev) => ({ ...prev, [id]: [] }));
+    setExtraColumnLabels((prev) => ({ ...prev, [id]: label }));
+    setOpenColumnDialog(false);
   };
 
-  // update column (rename label only)
   const handleUpdateColumn = (columnId: string, label: string) => {
     setExtraColumnLabels((prev) => ({ ...prev, [columnId]: label }));
     setEditingColumn(null);
-    setOpenNewColumn(false);
+    setOpenColumnDialog(false);
   };
 
-  // create job handler
-  const handleCreateJob = (
-    job: { JobID: number; JobName: string; Tasks?: any[] },
-    columnId: string
-  ) => {
+  const handleCreateJob = (job: any, columnId: string) => {
     const id = String(job.JobID);
     setJobsById((prev) => ({
       ...prev,
-      [id]: { ...(job as any), Tasks: job.Tasks || [] },
+      [id]: { ...job, Tasks: job.Tasks || [] },
     }));
-    setColumns((prev) => ({
-      ...prev,
-      [columnId]: [...(prev[columnId] || []), id],
-    }));
-    // update module data (in-memory)
-    try {
-      //  Data.Jobs = Data.Jobs || [];
-      //Data.Jobs.push({ ...job, Tasks: job.Tasks || [] });
-    } catch (e) {}
-    setOpenNewJob(false);
+    setColumns((prev) => ({ ...prev, [columnId]: [...prev[columnId], id] }));
+    setOpenJobDialog(false);
   };
 
-  // update job handler
-  const handleUpdateJob = (
-    job: { JobID: number; JobName: string; Tasks?: any[] },
-    columnId: string
-  ) => {
+  const handleUpdateJob = (job: any, columnId: string) => {
     const id = String(job.JobID);
-    setJobsById((prev) => {
-      const next = { ...prev };
-      next[id] = {
-        ...(next[id] || {}),
-        ...job,
-        Tasks: job.Tasks || next[id]?.Tasks || [],
-      };
-      return next;
-    });
-    // move between columns if needed
+    setJobsById((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], ...job, Tasks: job.Tasks || prev[id]?.Tasks || [] },
+    }));
     setColumns((prev) => {
       const next = { ...prev };
-      // remove from any column that contains it
       Object.keys(next).forEach((k) => {
         next[k] = next[k].filter((v) => v !== id);
       });
-      next[columnId] = [...(next[columnId] || []), id];
+      next[columnId] = [...next[columnId], id];
       return next;
     });
-    // update Data.Jobs if present
-    try {
-      const idx = Data.Jobs.findIndex((j: any) => String(j.JobID) === id);
-      if (idx >= 0)
-        Data.Jobs[idx] = {
-          ...Data.Jobs[idx],
-          ...job,
-          Tasks: job.Tasks || Data.Jobs[idx].Tasks || [],
-        };
-    } catch (e) {}
     setEditingJob(null);
-    setOpenNewJob(false);
+    setOpenJobDialog(false);
   };
 
-  // create task handler
-  const handleCreateTask = (task: any, targetJobId: string) => {
-    setJobsById((prev) => {
-      const next = { ...prev };
-      const j = next[targetJobId];
-      if (!j) return prev;
-      next[targetJobId] = { ...j, Tasks: [...(j.Tasks || []), task] };
-      // update module export
-      try {
-        const dj = Data.Jobs.find(
-          (x: any) => String(x.JobID) === String(targetJobId)
-        );
-        if (dj) {
-          dj.Tasks = dj.Tasks || [];
-          dj.Tasks.push(task);
-        }
-      } catch (e) {}
-      return next;
-    });
-    setOpenNewTask(false);
+  const handleCreateTask = (task: any, jobId: string) => {
+    setJobsById((prev) => ({
+      ...prev,
+      [jobId]: {
+        ...prev[jobId],
+        Tasks: [...(prev[jobId].Tasks || []), task],
+      },
+    }));
+    setOpenTaskDialog(false);
   };
 
-  // update task handler
-  const handleUpdateTask = (task: any, targetJobId: string) => {
+  const handleUpdateTask = (task: any, jobId: string) => {
     const taskId = String(task.TaskID);
-    setJobsById((prev) => {
-      const next = { ...prev };
-      const j = next[targetJobId];
-      if (!j) return prev;
-      next[targetJobId] = {
-        ...j,
-        Tasks: (j.Tasks || []).map((t: any) =>
+    setJobsById((prev) => ({
+      ...prev,
+      [jobId]: {
+        ...prev[jobId],
+        Tasks: (prev[jobId].Tasks || []).map((t: any) =>
           String(t.TaskID) === taskId ? { ...t, ...task } : t
         ),
-      };
-      return next;
-    });
-    // update Data.Jobs
-    try {
-      const dj = Data.Jobs.find(
-        (x: any) => String(x.JobID) === String(targetJobId)
-      );
-      if (dj) {
-        dj.Tasks = dj.Tasks || [];
-        const tIdx = dj.Tasks.findIndex(
-          (t: any) => String(t.TaskID) === taskId
-        );
-        if (tIdx >= 0) dj.Tasks[tIdx] = { ...dj.Tasks[tIdx], ...task };
-      }
-    } catch (e) {}
+      },
+    }));
     setEditingTask(null);
-    setOpenNewTask(false);
+    setOpenTaskDialog(false);
   };
 
-  // delete handler (job/task/column)
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
     if (deleteTarget.type === 'job') {
-      const id = deleteTarget.id;
-      // remove job
       setJobsById((prev) => {
         const next = { ...prev };
-        delete next[id];
+        delete next[deleteTarget.id];
         return next;
       });
       setColumns((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((k) => {
-          next[k] = next[k].filter((v) => v !== id);
+          next[k] = next[k].filter((v) => v !== deleteTarget.id);
         });
         return next;
       });
-      try {
-        const idx = Data.Jobs.findIndex((j: any) => String(j.JobID) === id);
-        if (idx >= 0) Data.Jobs.splice(idx, 1);
-      } catch (e) {}
     } else if (deleteTarget.type === 'task') {
-      const { id, parentId } = deleteTarget;
-      setJobsById((prev) => {
+      setJobsById((prev) => ({
+        ...prev,
+        [deleteTarget.parentId!]: {
+          ...prev[deleteTarget.parentId!],
+          Tasks: (prev[deleteTarget.parentId!].Tasks || []).filter(
+            (t: any) => String(t.TaskID) !== deleteTarget.id
+          ),
+        },
+      }));
+    } else if (
+      deleteTarget.type === 'column' &&
+      !columns[deleteTarget.id].length
+    ) {
+      setColumns((prev) => {
         const next = { ...prev };
-        const j = next[parentId!];
-        if (!j) return prev;
-        next[parentId!] = {
-          ...j,
-          Tasks: (j.Tasks || []).filter((t: any) => String(t.TaskID) !== id),
-        };
+        delete next[deleteTarget.id];
         return next;
       });
-      try {
-        const dj = Data.Jobs.find(
-          (j: any) => String(j.JobID) === String(parentId)
-        );
-        if (dj)
-          dj.Tasks = (dj.Tasks || []).filter(
-            (t: any) => String(t.TaskID) !== id
-          );
-      } catch (e) {}
-    } else if (deleteTarget.type === 'column') {
-      const colId = deleteTarget.id;
-      // only delete empty columns to avoid accidental loss
-      if ((columns[colId] || []).length === 0) {
-        setColumns((prev) => {
-          const next = { ...prev };
-          delete next[colId];
-          return next;
-        });
-        setExtraColumnLabels((prev) => {
-          const next = { ...prev };
-          delete next[colId];
-          return next;
-        });
-      } else {
-        // could show toast - not deleting non-empty column
-      }
+      setExtraColumnLabels((prev) => {
+        const next = { ...prev };
+        delete next[deleteTarget.id];
+        return next;
+      });
     }
     setDeleteTarget(null);
-    setOpenDeleteConfirm(false);
+    setOpenDeleteDialog(false);
   };
 
   return (
-    <div className='w-full'>
-      {/* Action bar */}
-      <div className='flex items-center gap-2 mb-4'>
+    <div className='w-full p-4'>
+      {/* Action Bar */}
+      <div className='flex items-center gap-2 mb-6'>
         <Button
           onClick={() => {
             setEditingColumn(null);
-            setOpenNewColumn(true);
+            setOpenColumnDialog(true);
           }}
         >
           + New Column
@@ -1014,7 +752,7 @@ const Taskboard = () => {
         <Button
           onClick={() => {
             setEditingJob(null);
-            setOpenNewJob(true);
+            setOpenJobDialog(true);
           }}
         >
           + New Job Card
@@ -1022,82 +760,77 @@ const Taskboard = () => {
         <Button
           onClick={() => {
             setEditingTask(null);
-            setOpenNewTask(true);
+            setOpenTaskDialog(true);
           }}
         >
           + New Task
         </Button>
 
-        {/* Collapse / Open all switch */}
         <div className='ml-auto flex items-center gap-3'>
           <span className='text-sm text-muted-foreground'>Collapse all</span>
           <Switch
             checked={Object.values(openColumns).every(Boolean)}
-            onCheckedChange={(v: boolean) => {
-              // set every column open state to the switch value
+            onCheckedChange={(v) => {
               const next: Record<string, boolean> = {};
               Object.keys(columns).forEach((k) => (next[k] = v));
               setOpenColumns(next);
             }}
-            aria-label='Open or collapse all columns'
           />
         </div>
       </div>
 
-      {/* New Column Sheet */}
-      <Sheet
-        open={openNewColumn}
+      {/* === CENTERED DIALOGS === */}
+      <Dialog
+        open={openColumnDialog}
         onOpenChange={(v) => {
-          if (!v) {
-            setEditingColumn(null);
-          }
-          setOpenNewColumn(v);
+          if (!v) setEditingColumn(null);
+          setOpenColumnDialog(v);
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle>
               {editingColumn ? 'Edit Column' : 'Add Column'}
-            </SheetTitle>
-            <SheetDescription>
+            </DialogTitle>
+            <DialogDescription>
               {editingColumn
                 ? 'Edit column label.'
                 : 'Create a new board column.'}
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
           <NewColumnForm
             initial={editingColumn ? { label: editingColumn.label } : undefined}
             onCancel={() => {
-              setOpenNewColumn(false);
+              setOpenColumnDialog(false);
               setEditingColumn(null);
             }}
-            onCreate={(label) => {
-              if (editingColumn)
-                handleUpdateColumn(editingColumn.columnId, label);
-              else handleCreateColumn(label);
-            }}
+            onCreate={(label) =>
+              editingColumn
+                ? handleUpdateColumn(editingColumn.columnId, label)
+                : handleCreateColumn(label)
+            }
           />
-          <SheetFooter />
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      {/* New Job Sheet */}
-      <Sheet
-        open={openNewJob}
+      <Dialog
+        open={openJobDialog}
         onOpenChange={(v) => {
           if (!v) setEditingJob(null);
-          setOpenNewJob(v);
+          setOpenJobDialog(v);
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editingJob ? 'Edit Job' : 'New Job Card'}</SheetTitle>
-            <SheetDescription>
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle>
+              {editingJob ? 'Edit Job' : 'New Job Card'}
+            </DialogTitle>
+            <DialogDescription>
               {editingJob
                 ? 'Edit job details.'
                 : 'Add a job and choose a column.'}
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
           <NewJobForm
             columns={Object.keys(columns)}
             initial={
@@ -1111,35 +844,34 @@ const Taskboard = () => {
                 : undefined
             }
             onCancel={() => {
-              setOpenNewJob(false);
+              setOpenJobDialog(false);
               setEditingJob(null);
             }}
-            onCreate={(job, colId) => {
-              if (editingJob) handleUpdateJob(job, colId);
-              else handleCreateJob(job, colId);
-            }}
+            onCreate={(job, colId) =>
+              editingJob
+                ? handleUpdateJob(job, colId)
+                : handleCreateJob(job, colId)
+            }
           />
-          <SheetFooter />
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      {/* New Task Sheet */}
-      <Sheet
-        open={openNewTask}
+      <Dialog
+        open={openTaskDialog}
         onOpenChange={(v) => {
           if (!v) setEditingTask(null);
-          setOpenNewTask(v);
+          setOpenTaskDialog(v);
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editingTask ? 'Edit Task' : 'New Task'}</SheetTitle>
-            <SheetDescription>
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle>{editingTask ? 'Edit Task' : 'New Task'}</DialogTitle>
+            <DialogDescription>
               {editingTask
                 ? 'Edit task details.'
                 : 'Add a task and select job.'}
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
           <NewTaskForm
             jobs={Object.values(jobsById)}
             initial={
@@ -1154,63 +886,64 @@ const Taskboard = () => {
                 : undefined
             }
             onCancel={() => {
-              setOpenNewTask(false);
+              setOpenTaskDialog(false);
               setEditingTask(null);
             }}
-            onCreate={(task, jobId) => {
-              if (editingTask) handleUpdateTask(task, String(jobId));
-              else handleCreateTask(task, String(jobId));
-            }}
+            onCreate={(task, jobId) =>
+              editingTask
+                ? handleUpdateTask(task, String(jobId))
+                : handleCreateTask(task, String(jobId))
+            }
           />
-          <SheetFooter />
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-      {/* Delete confirmation sheet */}
-      <Sheet
-        open={openDeleteConfirm}
+      <Dialog
+        open={openDeleteDialog}
         onOpenChange={(v) => {
           if (!v) setDeleteTarget(null);
-          setOpenDeleteConfirm(v);
+          setOpenDeleteDialog(v);
         }}
       >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Confirm delete</SheetTitle>
-            <SheetDescription>
-              Are you sure you want to delete this{' '}
-              {deleteTarget?.type ?? 'item'}?
-            </SheetDescription>
-          </SheetHeader>
-          <div className='p-4 flex justify-end gap-2'>
+        <DialogContent className='sm:max-w-sm'>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this {deleteTarget?.type}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
             <Button
               variant='ghost'
               onClick={() => {
-                setOpenDeleteConfirm(false);
+                setOpenDeleteDialog(false);
                 setDeleteTarget(null);
               }}
             >
               Cancel
             </Button>
-            <Button onClick={handleConfirmDelete} className='bg-destructive'>
+            <Button
+              onClick={handleConfirmDelete}
+              className='bg-destructive text-destructive-foreground'
+            >
               Delete
             </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
+      {/* === Board === */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={onDragEnd}
       >
-        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4'>
           {Object.keys(columns).map((colId) => {
             const jobIds = columns[colId] || [];
             const jobs = jobIds.map((id) => jobsById[id]).filter(Boolean);
-            // label fallback: known labels or extraColumnLabels
             const label =
-              (COLUMN_LABELS as any)[colId] ??
+              COLUMN_LABELS[colId as ColumnId] ??
               extraColumnLabels[colId] ??
               colId;
             return (
@@ -1218,7 +951,6 @@ const Taskboard = () => {
                 key={colId}
                 id={colId}
                 jobs={jobs}
-                jobsMap={jobsById}
                 label={label}
                 isOpen={!!openColumns[colId]}
                 onToggle={(open) =>

@@ -1,16 +1,16 @@
+// @/components/ui/AppSidebar.tsx
+'use client';
+
 import {
   ChartCandlestick,
   ChevronDown,
-  ChevronUp,
   CircleDollarSign,
   ClipboardClock,
   File,
   FolderOpen,
   Home,
   Plus,
-  Projector,
   Settings,
-  User,
   User2,
   Users,
 } from 'lucide-react';
@@ -24,134 +24,143 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubItem,
-  SidebarSeparator,
 } from './ui/sidebar';
 import Link from 'next/link';
-import { DropdownMenu } from './ui/dropdown-menu';
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@radix-ui/react-dropdown-menu';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from './ui/collapsible';
-import { projectShutdown } from 'next/dist/build/swc/generated-native';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { useProject } from '@/context/ProjectContext';
 
-const items = [
-  { title: 'Home', icon: Home, link: '/' },
-  {
-    title: 'Finance',
-    icon: ChartCandlestick,
-    link: '/Finance',
-  },
-  { title: 'Settings', icon: Settings, link: '/settings' },
-];
-const projects = ['Island view', 'Marine drive', 'Lake view', 'Waterfall'];
+export default function AppSidebar() {
+  const { projects, selectedProjectId, setSelectedProjectId, selectedProject } =
+    useProject();
 
-const AppSidebar = () => {
-  const company = 'Rantle Construction';
   return (
     <Sidebar collapsible='icon'>
+      {/* Header */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href='/'>
-                {/* <Home className='mr-2 h-4 w-4' /> */}
-                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-gray-500 to-blue-500 text-white font-extrabold text-xl rounded-xs">RC</div>
-                <span className='font-bold text-sm tracking-wide'>
-                  {company}
-                </span>
+              <Link href='/' className='flex items-center gap-2'>
+                <div className='flex h-9 w-9 items-center justify-center rounded-sm bg-gradient-to-br from-gray-600 to-blue-600 text-white font-bold text-lg'>
+                  RC
+                </div>
+                <span className='font-bold'>Rantle Construction</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
+          {/* Project Switcher */}
+          <SidebarMenuItem>
+            <select
+              value={selectedProjectId ?? ''}
+              onChange={(e) =>
+                setSelectedProjectId(
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
+              className='w-full rounded border bg-background px-2 py-1 text-xs'
+            >
+              <option value=''>All Projects</option>
+              {projects.map((p) => (
+                <option key={p.ProjectID} value={p.ProjectID}>
+                  {p.ProjectName}
+                </option>
+              ))}
+            </select>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarSeparator />
+
       <SidebarContent>
-        {/* top group content */}
+        {/* Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Project Management App</SidebarGroupLabel>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {[
+                { title: 'Home', icon: Home, href: '/' },
+                { title: 'Finance', icon: ChartCandlestick, href: '/finance' },
+                { title: 'Settings', icon: Settings, href: '/settings' },
+              ].map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.link}>
-                      <item.icon />
+                    <Link href={item.href}>
+                      <item.icon className='h-4 w-4' />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {/* end of top group content */}
-        {/* COLLAPSIBLE projects*/}
+
+        {/* Projects */}
         <Collapsible defaultOpen className='group/collapsible'>
           <SidebarGroup>
             <SidebarGroupLabel asChild>
               <CollapsibleTrigger>
-                projects
+                Projects
                 <ChevronDown className='ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180' />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
             <CollapsibleContent>
-              <SidebarGroupContent />
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {projects.map((project, index) => (
-                      <SidebarMenuItem key={index}>
-                        <SidebarMenuButton asChild>
-                          <Link href='/#'>
-                            <FolderOpen />
-                            {project}
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {projects.map((p) => (
+                    <SidebarMenuItem key={p.ProjectID}>
+                      <SidebarMenuButton
+                        asChild
+                        className={
+                          selectedProjectId === p.ProjectID ? 'bg-accent' : ''
+                        }
+                      >
+                        <Link href={`/project/${p.ProjectID}`}>
+                          <FolderOpen className='h-4 w-4' />
+                          {p.ProjectName}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
+
+        {/* Quotes */}
         <SidebarGroup>
           <SidebarGroupLabel>Quotes</SidebarGroupLabel>
-          <SidebarGroupAction>
-            <Plus />
-            <span className='sr-only'>create quote</span>
+          <SidebarGroupAction title='Create Quote'>
+            <Plus className='h-4 w-4' />
           </SidebarGroupAction>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href='/#'>
-                  <File />
-                  see all quotes
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href='/#'>
-                  <Plus />
-                  add quote
+                <Link href='/quotes'>
+                  <File className='h-4 w-4' />
+                  All Quotes
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
-        {/* COLLAPSIBLE invoices*/}
+
+        {/* Invoices */}
         <Collapsible defaultOpen className='group/collapsible'>
           <SidebarGroup>
             <SidebarGroupLabel asChild>
@@ -161,71 +170,44 @@ const AppSidebar = () => {
               </CollapsibleTrigger>
             </SidebarGroupLabel>
             <CollapsibleContent>
-              <SidebarGroupContent />
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
-                        <Link href='/#'>
-                          <CircleDollarSign />
-                          see all invoices
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
-                        <Link href='/#'>
-                          <Plus />
-                          add invoice
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href='/invoices'>
+                        <CircleDollarSign className='h-4 w-4' />
+                        All Invoices
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
-        {/* nested */}
+
+        {/* People */}
         <SidebarGroup>
           <SidebarGroupLabel>People</SidebarGroupLabel>
-
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href='/#'>
-                  <Users />
-                  see all employees
+                <Link href='/employees'>
+                  <Users className='h-4 w-4' />
+                  Employees
                 </Link>
               </SidebarMenuButton>
-              {/* submenu */}
               <SidebarMenuSub>
                 <SidebarMenuSubItem>
                   <SidebarMenuButton asChild>
-                    <Link href='/#'>
-                      <Plus />
-                      add employee
-                    </Link>
+                    <Link href='/employees/add'>Add Employee</Link>
                   </SidebarMenuButton>
                 </SidebarMenuSubItem>
-              </SidebarMenuSub>
-              <SidebarMenuSub>
                 <SidebarMenuSubItem>
                   <SidebarMenuButton asChild>
-                    <Link href='/#'>
-                      <Plus />
-                      add manager
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuButton asChild>
-                    <Link href='/#'>
-                      <ClipboardClock />
-                      time sheets
+                    <Link href='/timesheets'>
+                      <ClipboardClock className='h-4 w-4' />
+                      Timesheets
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuSubItem>
@@ -234,29 +216,23 @@ const AppSidebar = () => {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* Footer */}
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> Username
-                  <ChevronUp className='ml-auto' />
+                  <User2 className='h-4 w-4' />
+                  Username
+                  <ChevronDown className='ml-auto h-4 w-4' />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align='end'
-                className='p-2  border rounded-lg'
-              >
-                <DropdownMenuItem className='hover:cursor-pointer hover:bg-gray-200 rounded-xs px-2 mt-2'>
-                  <span>Account</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className='hover:cursor-pointer hover:bg-gray-200 rounded-xs px-2 mt-2'>
-                  <span>Billing</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className='hover:cursor-pointer hover:bg-gray-200 rounded-xs px-2 mt-2'>
-                  <span>Sign out</span>
-                </DropdownMenuItem>
+              <DropdownMenuContent side='top' className='w-48'>
+                <DropdownMenuItem>Account</DropdownMenuItem>
+                <DropdownMenuItem>Billing</DropdownMenuItem>
+                <DropdownMenuItem>Sign out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
@@ -264,5 +240,4 @@ const AppSidebar = () => {
       </SidebarFooter>
     </Sidebar>
   );
-};
-export default AppSidebar;
+}

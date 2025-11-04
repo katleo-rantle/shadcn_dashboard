@@ -1,536 +1,534 @@
+// @/lib/data.ts
+'strict';
+
+import { Project } from "./types";
+
+// === 1. Projects (Minimal) ===
 export const projects = [
   {
     ProjectID: 1,
     ProjectName: 'Downtown Office Renovation',
     QuotedCost: 125000.5,
-    Status: 'Active',
+    Status: 'Active' as const,
     QuoteDate: '2024-03-15',
-    Jobs: [
-      {
-        JobID: 101,
-        JobName: 'Electrical Wiring',
-        StartDate: '2024-04-01',
-      },
-      {
-        JobID: 102,
-        JobName: 'Plumbing Installation',
-        StartDate: '2024-04-10',
-      },
-    ],
-    ChangeOrders: [
-      {
-        ChangeOrderID: 201,
-        Description: 'Additional Lighting Fixtures',
-        CostAdjustment: 5000.0,
-        Date: '2024-05-01',
-      },
-    ],
   },
   {
     ProjectID: 2,
     ProjectName: 'Residential Kitchen Remodel',
     QuotedCost: 45000.0,
-    Status: 'Completed',
+    Status: 'Completed' as const,
     QuoteDate: '2024-01-20',
-    Jobs: [
-      {
-        JobID: 103,
-        JobName: 'Cabinet Installation',
-        StartDate: '2024-02-15',
-      },
-    ],
-    ChangeOrders: [],
   },
   {
     ProjectID: 3,
     ProjectName: 'Commercial Warehouse Expansion',
     QuotedCost: 250000.75,
-    Status: 'In Progress',
+    Status: 'In Progress' as const,
     QuoteDate: '2024-06-10',
-    Jobs: [
-      {
-        JobID: 104,
-        JobName: 'Foundation Work',
-        StartDate: '2024-07-01',
-      },
-      {
-        JobID: 105,
-        JobName: 'Structural Steel',
-        StartDate: '2024-07-15',
-      },
-    ],
-    ChangeOrders: [
-      {
-        ChangeOrderID: 202,
-        Description: 'Extended Roof Area',
-        CostAdjustment: 15000.0,
-        Date: '2024-08-05',
-      },
-    ],
   },
-  {
-    ProjectID: 4,
-    ProjectName: 'Commercial Office Renovation',
-    QuotedCost: 480000.75,
-    Status: 'Not started',
-    QuoteDate: '2024-06-10',
-    Jobs: [
-      {
-        JobID: 104,
-        JobName: 'Foundation Work',
-        StartDate: '2024-07-01',
-      },
-      {
-        JobID: 105,
-        JobName: 'Structural Steel',
-        StartDate: '2024-07-15',
-      },
-    ],
-    ChangeOrders: [
-      {
-        ChangeOrderID: 202,
-        Description: 'Extended Roof Area',
-        CostAdjustment: 15000.0,
-        Date: '2024-08-05',
-      },
-    ],
-  },
-];
+] as const;
 
-export const Jobs = [
+// === 2. Jobs (with Gantt fields) ===
+export const jobs = [
   {
     JobID: 101,
     ProjectID: 1,
     JobName: 'Electrical Wiring',
     JobBudget: 25000.0,
-    Status: 'In Progress',
-    Tasks: [
-      {
-        TaskID: 1001,
-        TaskName: 'Install Main Panel',
-        DueDate: '2024-04-15',
-        TaskBudget: 5000.0,
-      },
-      {
-        TaskID: 1002,
-        TaskName: 'Wire Outlets',
-        DueDate: '2024-04-20',
-        TaskBudget: 1000.0,
-      },
-    ],
-    Invoices: [
-      {
-        InvoiceID: 3001,
-        Amount: 8000.0,
-        Date: '2024-04-05',
-      },
-    ],
+    Status: 'In Progress' as const,
+    StartDate: '2024-04-01',
+    Duration: 15,
+    Progress: 0.4,
+    PredecessorJobID: null,
   },
   {
     JobID: 102,
     ProjectID: 1,
     JobName: 'Plumbing Installation',
     JobBudget: 18000.0,
-    Status: 'Active',
-    Tasks: [
-      {
-        TaskID: 1003,
-        TaskName: 'Lay Pipes',
-        DueDate: '2024-04-25',
-      },
-      {
-        TaskID: 1004,
-        TaskName: 'Install Fixtures',
-        DueDate: '2024-05-01',
-      },
-    ],
-    Invoices: [
-      {
-        InvoiceID: 3002,
-        Amount: 5000.0,
-        Date: '2024-04-12',
-      },
-    ],
+    Status: 'Active' as const,
+    StartDate: '2024-04-10',
+    Duration: 20,
+    Progress: 0.3,
+    PredecessorJobID: 101,
   },
   {
     JobID: 103,
     ProjectID: 2,
     JobName: 'Cabinet Installation',
     JobBudget: 12000.0,
-    Status: 'Completed',
-    Tasks: [
-      {
-        TaskID: 1005,
-        TaskName: 'Measure and Cut',
-        DueDate: '2024-02-20',
-      },
-      {
-        TaskID: 1006,
-        TaskName: 'Assemble and Install',
-        DueDate: '2024-02-28',
-      },
-    ],
-    Invoices: [
-      {
-        InvoiceID: 3003,
-        Amount: 12000.0,
-        Date: '2024-03-01',
-      },
-    ],
+    Status: 'Completed' as const,
+    StartDate: '2024-02-15',
+    Duration: 14,
+    Progress: 1.0,
+    PredecessorJobID: null,
   },
   {
     JobID: 104,
     ProjectID: 3,
     JobName: 'Foundation Work',
     JobBudget: 60000.0,
-    Status: 'In Progress',
-    Tasks: [
-      {
-        TaskID: 1007,
-        TaskName: 'Excavate Site',
-        DueDate: '2024-07-10',
-      },
-      {
-        TaskID: 1008,
-        TaskName: 'Pour Concrete',
-        DueDate: '2024-07-20',
-      },
-    ],
-    Invoices: [
-      {
-        InvoiceID: 3004,
-        Amount: 20000.0,
-        Date: '2024-07-05',
-      },
-    ],
+    Status: 'In Progress' as const,
+    StartDate: '2024-07-01',
+    Duration: 20,
+    Progress: 0.45,
+    PredecessorJobID: null,
   },
   {
     JobID: 105,
     ProjectID: 3,
     JobName: 'Structural Steel',
     JobBudget: 45000.0,
-    Status: 'Active',
-    Tasks: [
-      {
-        TaskID: 1009,
-        TaskName: 'Fabricate Beams',
-        DueDate: '2024-07-25',
-      },
-      {
-        TaskID: 1010,
-        TaskName: 'Erect Framework',
-        DueDate: '2024-08-10',
-      },
-    ],
-    Invoices: [
-      {
-        InvoiceID: 3005,
-        Amount: 15000.0,
-        Date: '2024-07-18',
-      },
-    ],
+    Status: 'Active' as const,
+    StartDate: '2024-07-15',
+    Duration: 30,
+    Progress: 0.2,
+    PredecessorJobID: 104,
   },
-];
+] as const;
 
-const task = [
+// === 3. Tasks (Sub-tasks of Jobs) ===
+export const tasks = [
   {
     TaskID: 1001,
     JobID: 101,
     TaskName: 'Install Main Panel',
     TaskBudget: 5000.0,
-    Status: 'In Progress',
-    TASK_PROGRESS: [
-      {
-        ProgressID: 4001,
-        Date: '2024-04-10',
-        Percentage: 50,
-        Notes: 'Panel mounted and wired halfway',
-      },
-    ],
-    MATERIALS: [
-      {
-        MaterialID: 5001,
-        Name: 'Electrical Panel',
-        Quantity: 1,
-        Cost: 1200.0,
-      },
-      {
-        MaterialID: 5002,
-        Name: 'Wires',
-        Quantity: 100,
-        Cost: 500.0,
-      },
-    ],
-    TASK_PHOTOs: [
-      {
-        PhotoID: 6001,
-        Url: 'https://example.com/photos/task1001_01.jpg',
-        DateTaken: '2024-04-10',
-      },
-    ],
+    Status: 'In Progress' as const,
+    DueDate: '2024-04-15',
+    Progress: 0.5,
   },
   {
     TaskID: 1002,
     JobID: 101,
     TaskName: 'Wire Outlets',
     TaskBudget: 3000.0,
-    Status: 'Not Started',
-    TASK_PROGRESS: [],
-    MATERIALS: [
-      {
-        MaterialID: 5003,
-        Name: 'Outlet Boxes',
-        Quantity: 20,
-        Cost: 200.0,
-      },
-    ],
-    TASK_PHOTOs: [],
+    Status: 'Not Started' as const,
+    DueDate: '2024-04-20',
+    Progress: 0.0,
   },
   {
     TaskID: 1003,
     JobID: 102,
     TaskName: 'Lay Pipes',
     TaskBudget: 4000.0,
-    Status: 'Completed',
-    TASK_PROGRESS: [
-      {
-        ProgressID: 4002,
-        Date: '2024-04-20',
-        Percentage: 100,
-        Notes: 'All pipes laid and tested',
-      },
-    ],
-    MATERIALS: [
-      {
-        MaterialID: 5004,
-        Name: 'PVC Pipes',
-        Quantity: 50,
-        Cost: 800.0,
-      },
-    ],
-    TASK_PHOTOs: [
-      {
-        PhotoID: 6002,
-        Url: 'https://example.com/photos/task1003_01.jpg',
-        DateTaken: '2024-04-20',
-      },
-    ],
+    Status: 'Completed' as const,
+    DueDate: '2024-04-25',
+    Progress: 1.0,
   },
   {
     TaskID: 1004,
     JobID: 102,
     TaskName: 'Install Fixtures',
     TaskBudget: 2500.0,
-    Status: 'In Progress',
-    TASK_PROGRESS: [
-      {
-        ProgressID: 4003,
-        Date: '2024-04-28',
-        Percentage: 70,
-        Notes: 'Sinks installed, faucets pending',
-      },
-    ],
-    MATERIALS: [
-      {
-        MaterialID: 5005,
-        Name: 'Sinks',
-        Quantity: 5,
-        Cost: 750.0,
-      },
-    ],
-    TASK_PHOTOs: [
-      {
-        PhotoID: 6003,
-        Url: 'https://example.com/photos/task1004_01.jpg',
-        DateTaken: '2024-04-28',
-      },
-    ],
+    Status: 'In Progress' as const,
+    DueDate: '2024-05-01',
+    Progress: 0.7,
   },
   {
     TaskID: 1005,
     JobID: 103,
     TaskName: 'Measure and Cut',
     TaskBudget: 2000.0,
-    Status: 'Completed',
-    TASK_PROGRESS: [
-      {
-        ProgressID: 4004,
-        Date: '2024-02-18',
-        Percentage: 100,
-        Notes: 'All measurements taken and cuts made',
-      },
-    ],
-    MATERIALS: [
-      {
-        MaterialID: 5006,
-        Name: 'Measuring Tape',
-        Quantity: 2,
-        Cost: 50.0,
-      },
-    ],
-    TASK_PHOTOs: [],
+    Status: 'Completed' as const,
+    DueDate: '2024-02-20',
+    Progress: 1.0,
   },
   {
     TaskID: 1006,
     JobID: 103,
     TaskName: 'Assemble and Install',
     TaskBudget: 3500.0,
-    Status: 'Completed',
-    TASK_PROGRESS: [
-      {
-        ProgressID: 4005,
-        Date: '2024-02-25',
-        Percentage: 100,
-        Notes: 'Cabinets fully installed',
-      },
-    ],
-    MATERIALS: [
-      {
-        MaterialID: 5007,
-        Name: 'Cabinets',
-        Quantity: 10,
-        Cost: 2000.0,
-      },
-    ],
-    TASK_PHOTOs: [
-      {
-        PhotoID: 6004,
-        Url: 'https://example.com/photos/task1006_01.jpg',
-        DateTaken: '2024-02-25',
-      },
-    ],
+    Status: 'Completed' as const,
+    DueDate: '2024-02-28',
+    Progress: 1.0,
   },
   {
     TaskID: 1007,
     JobID: 104,
     TaskName: 'Excavate Site',
     TaskBudget: 10000.0,
-    Status: 'In Progress',
-    TASK_PROGRESS: [
-      {
-        ProgressID: 4006,
-        Date: '2024-07-08',
-        Percentage: 40,
-        Notes: 'Excavation ongoing',
-      },
-    ],
-    MATERIALS: [
-      {
-        MaterialID: 5008,
-        Name: 'Excavation Tools',
-        Quantity: 5,
-        Cost: 1500.0,
-      },
-    ],
-    TASK_PHOTOs: [
-      {
-        PhotoID: 6005,
-        Url: 'https://example.com/photos/task1007_01.jpg',
-        DateTaken: '2024-07-08',
-      },
-    ],
+    Status: 'In Progress' as const,
+    DueDate: '2024-07-10',
+    Progress: 0.4,
   },
   {
     TaskID: 1008,
     JobID: 104,
     TaskName: 'Pour Concrete',
     TaskBudget: 15000.0,
-    Status: 'Not Started',
-    TASK_PROGRESS: [],
-    MATERIALS: [
-      {
-        MaterialID: 5009,
-        Name: 'Concrete Mix',
-        Quantity: 200,
-        Cost: 8000.0,
-      },
-    ],
-    TASK_PHOTOs: [],
+    Status: 'Not Started' as const,
+    DueDate: '2024-07-20',
+    Progress: 0.0,
   },
   {
     TaskID: 1009,
     JobID: 105,
     TaskName: 'Fabricate Beams',
     TaskBudget: 8000.0,
-    Status: 'Active',
-    TASK_PROGRESS: [
-      {
-        ProgressID: 4007,
-        Date: '2024-07-20',
-        Percentage: 60,
-        Notes: 'Beams partially fabricated',
-      },
-    ],
-    MATERIALS: [
-      {
-        MaterialID: 5010,
-        Name: 'Steel Beams',
-        Quantity: 15,
-        Cost: 3000.0,
-      },
-    ],
-    TASK_PHOTOs: [],
+    Status: 'Active' as const,
+    DueDate: '2024-07-25',
+    Progress: 0.6,
   },
   {
     TaskID: 1010,
     JobID: 105,
     TaskName: 'Erect Framework',
     TaskBudget: 12000.0,
-    Status: 'Not Started',
-    TASK_PROGRESS: [],
-    MATERIALS: [
-      {
-        MaterialID: 5011,
-        Name: 'Bolts and Nuts',
-        Quantity: 500,
-        Cost: 1000.0,
-      },
-    ],
-    TASK_PHOTOs: [],
+    Status: 'Not Started' as const,
+    DueDate: '2024-08-10',
+    Progress: 0.0,
   },
   {
     TaskID: 1011,
     JobID: 101,
     TaskName: 'Test Electrical System',
     TaskBudget: 1500.0,
-    Status: 'Not Started',
-    TASK_PROGRESS: [],
-    MATERIALS: [
-      {
-        MaterialID: 5012,
-        Name: 'Testing Equipment',
-        Quantity: 1,
-        Cost: 800.0,
-      },
-    ],
-    TASK_PHOTOs: [],
+    Status: 'Not Started' as const,
+    DueDate: '2024-04-25',
+    Progress: 0.0,
   },
   {
     TaskID: 1012,
     JobID: 102,
     TaskName: 'Pressure Test Pipes',
     TaskBudget: 1000.0,
-    Status: 'Completed',
-    TASK_PROGRESS: [
-      {
-        ProgressID: 4008,
-        Date: '2024-04-22',
-        Percentage: 100,
-        Notes: 'All tests passed',
-      },
-    ],
-    MATERIALS: [],
-    TASK_PHOTOs: [
-      {
-        PhotoID: 6006,
-        Url: 'https://example.com/photos/task1012_01.jpg',
-        DateTaken: '2024-04-22',
-      },
-    ],
+    Status: 'Completed' as const,
+    DueDate: '2024-04-22',
+    Progress: 1.0,
   },
-];
+] as const;
 
-const TASK_CATALOGUE = [
+// === 4. Task Progress (History) ===
+export const taskProgress = [
+  {
+    ProgressID: 4001,
+    TaskID: 1001,
+    Date: '2024-04-10',
+    Percentage: 50,
+    Notes: 'Panel mounted and wired halfway',
+  },
+  {
+    ProgressID: 4002,
+    TaskID: 1003,
+    Date: '2024-04-20',
+    Percentage: 100,
+    Notes: 'All pipes laid and tested',
+  },
+  {
+    ProgressID: 4003,
+    TaskID: 1004,
+    Date: '2024-04-28',
+    Percentage: 70,
+    Notes: 'Sinks installed, faucets pending',
+  },
+  {
+    ProgressID: 4004,
+    TaskID: 1005,
+    Date: '2024-02-18',
+    Percentage: 100,
+    Notes: 'All measurements taken and cuts made',
+  },
+  {
+    ProgressID: 4005,
+    TaskID: 1006,
+    Date: '2024-02-25',
+    Percentage: 100,
+    Notes: 'Cabinets fully installed',
+  },
+  {
+    ProgressID: 4006,
+    TaskID: 1007,
+    Date: '2024-07-08',
+    Percentage: 40,
+    Notes: 'Excavation ongoing',
+  },
+  {
+    ProgressID: 4007,
+    TaskID: 1009,
+    Date: '2024-07-20',
+    Percentage: 60,
+    Notes: 'Beams partially fabricated',
+  },
+  {
+    ProgressID: 4008,
+    TaskID: 1012,
+    Date: '2024-04-22',
+    Percentage: 100,
+    Notes: 'All tests passed',
+  },
+] as const;
+
+// === 5. Materials ===
+export const materials = [
+  {
+    MaterialID: 5001,
+    TaskID: 1001,
+    Name: 'Electrical Panel',
+    Quantity: 1,
+    Cost: 1200.0,
+  },
+  { MaterialID: 5002, TaskID: 1001, Name: 'Wires', Quantity: 100, Cost: 500.0 },
+  {
+    MaterialID: 5003,
+    TaskID: 1002,
+    Name: 'Outlet Boxes',
+    Quantity: 20,
+    Cost: 200.0,
+  },
+  {
+    MaterialID: 5004,
+    TaskID: 1003,
+    Name: 'PVC Pipes',
+    Quantity: 50,
+    Cost: 800.0,
+  },
+  { MaterialID: 5005, TaskID: 1004, Name: 'Sinks', Quantity: 5, Cost: 750.0 },
+  {
+    MaterialID: 5006,
+    TaskID: 1005,
+    Name: 'Measuring Tape',
+    Quantity: 2,
+    Cost: 50.0,
+  },
+  {
+    MaterialID: 5007,
+    TaskID: 1006,
+    Name: 'Cabinets',
+    Quantity: 10,
+    Cost: 2000.0,
+  },
+  {
+    MaterialID: 5008,
+    TaskID: 1007,
+    Name: 'Excavation Tools',
+    Quantity: 5,
+    Cost: 1500.0,
+  },
+  {
+    MaterialID: 5009,
+    TaskID: 1008,
+    Name: 'Concrete Mix',
+    Quantity: 200,
+    Cost: 8000.0,
+  },
+  {
+    MaterialID: 5010,
+    TaskID: 1009,
+    Name: 'Steel Beams',
+    Quantity: 15,
+    Cost: 3000.0,
+  },
+  {
+    MaterialID: 5011,
+    TaskID: 1010,
+    Name: 'Bolts and Nuts',
+    Quantity: 500,
+    Cost: 1000.0,
+  },
+  {
+    MaterialID: 5012,
+    TaskID: 1011,
+    Name: 'Testing Equipment',
+    Quantity: 1,
+    Cost: 800.0,
+  },
+] as const;
+
+// === 6. Task Photos ===
+export const taskPhotos = [
+  {
+    PhotoID: 6001,
+    TaskID: 1001,
+    Url: 'https://example.com/photos/task1001_01.jpg',
+    DateTaken: '2024-04-10',
+  },
+  {
+    PhotoID: 6002,
+    TaskID: 1003,
+    Url: 'https://example.com/photos/task1003_01.jpg',
+    DateTaken: '2024-04-20',
+  },
+  {
+    PhotoID: 6003,
+    TaskID: 1004,
+    Url: 'https://example.com/photos/task1004_01.jpg',
+    DateTaken: '2024-04-28',
+  },
+  {
+    PhotoID: 6004,
+    TaskID: 1006,
+    Url: 'https://example.com/photos/task1006_01.jpg',
+    DateTaken: '2024-02-25',
+  },
+  {
+    PhotoID: 6005,
+    TaskID: 1007,
+    Url: 'https://example.com/photos/task1007_01.jpg',
+    DateTaken: '2024-07-08',
+  },
+  {
+    PhotoID: 6006,
+    TaskID: 1012,
+    Url: 'https://example.com/photos/task1012_01.jpg',
+    DateTaken: '2024-04-22',
+  },
+] as const;
+
+// === 7. Invoices ===
+export const invoices = [
+  {
+    InvoiceID: 3001,
+    JobID: 101,
+    AmountDue: 8000.0,
+    PaymentStatus: 'Partially Paid' as const,
+  },
+  {
+    InvoiceID: 3002,
+    JobID: 102,
+    AmountDue: 5000.0,
+    PaymentStatus: 'Paid' as const,
+  },
+  {
+    InvoiceID: 3003,
+    JobID: 103,
+    AmountDue: 12000.0,
+    PaymentStatus: 'Paid' as const,
+  },
+  {
+    InvoiceID: 3004,
+    JobID: 104,
+    AmountDue: 20000.0,
+    PaymentStatus: 'Unpaid' as const,
+  },
+  {
+    InvoiceID: 3005,
+    JobID: 105,
+    AmountDue: 15000.0,
+    PaymentStatus: 'Partially Paid' as const,
+  },
+  {
+    InvoiceID: 3006,
+    JobID: 101,
+    AmountDue: 3500.0,
+    PaymentStatus: 'Unpaid' as const,
+  },
+  {
+    InvoiceID: 3007,
+    JobID: 103,
+    AmountDue: 2500.0,
+    PaymentStatus: 'Paid' as const,
+  },
+  {
+    InvoiceID: 3008,
+    JobID: 104,
+    AmountDue: 10000.0,
+    PaymentStatus: 'Partially Paid' as const,
+  },
+] as const;
+
+// === 8. Payments ===
+export const payments = [
+  {
+    PaymentID: 7001,
+    InvoiceID: 3001,
+    Amount: 4000.0,
+    PaymentDate: '2024-04-15',
+    Method: 'Bank Transfer',
+  },
+  {
+    PaymentID: 7002,
+    InvoiceID: 3001,
+    Amount: 2000.0,
+    PaymentDate: '2024-05-01',
+    Method: 'Credit Card',
+  },
+  {
+    PaymentID: 7003,
+    InvoiceID: 3002,
+    Amount: 5000.0,
+    PaymentDate: '2024-04-20',
+    Method: 'Bank Transfer',
+  },
+  {
+    PaymentID: 7004,
+    InvoiceID: 3003,
+    Amount: 6000.0,
+    PaymentDate: '2024-03-05',
+    Method: 'Check',
+  },
+  {
+    PaymentID: 7005,
+    InvoiceID: 3003,
+    Amount: 6000.0,
+    PaymentDate: '2024-03-10',
+    Method: 'Bank Transfer',
+  },
+  {
+    PaymentID: 7006,
+    InvoiceID: 3005,
+    Amount: 7500.0,
+    PaymentDate: '2024-07-25',
+    Method: 'Bank Transfer',
+  },
+  {
+    PaymentID: 7007,
+    InvoiceID: 3007,
+    Amount: 2500.0,
+    PaymentDate: '2024-03-15',
+    Method: 'Credit Card',
+  },
+  {
+    PaymentID: 7008,
+    InvoiceID: 3008,
+    Amount: 5000.0,
+    PaymentDate: '2024-07-30',
+    Method: 'Check',
+  },
+] as const;
+
+// === 9. Change Orders ===
+export const changeOrders = [
+  {
+    ChangeOrderID: 201,
+    ProjectID: 1,
+    Description: 'Additional Lighting Fixtures',
+    CostImpact: 5000.0,
+  },
+  {
+    ChangeOrderID: 202,
+    ProjectID: 3,
+    Description: 'Extended Roof Area',
+    CostImpact: 15000.0,
+  },
+  {
+    ChangeOrderID: 203,
+    ProjectID: 1,
+    Description: 'Upgrade to LED Lighting System',
+    CostImpact: 3000.0,
+  },
+  {
+    ChangeOrderID: 204,
+    ProjectID: 2,
+    Description: 'Change to Quartz Countertops',
+    CostImpact: 2500.0,
+  },
+  {
+    ChangeOrderID: 205,
+    ProjectID: 3,
+    Description: 'Additional Structural Supports',
+    CostImpact: 8000.0,
+  },
+  {
+    ChangeOrderID: 206,
+    ProjectID: 1,
+    Description: 'Extra Electrical Outlets',
+    CostImpact: 1200.0,
+  },
+] as const;
+
+// === 10. Task Catalogue (Templates) ===
+export const taskCatalogue = [
   {
     CatalogueItemID: 1,
     ItemDescription: 'Installation of standard wooden door',
@@ -636,156 +634,4 @@ const TASK_CATALOGUE = [
     UnitOfMeasure: 'per fixture',
     Category: 'Electrical',
   },
-];
-
-const CHANGE_ORDER = [
-  {
-    ChangeOrderID: 201,
-    ProjectID: 1,
-    Description: 'Additional Lighting Fixtures',
-    CostImpact: 5000.0,
-  },
-  {
-    ChangeOrderID: 202,
-    ProjectID: 3,
-    Description: 'Extended Roof Area',
-    CostImpact: 15000.0,
-  },
-  {
-    ChangeOrderID: 203,
-    ProjectID: 1,
-    Description: 'Upgrade to LED Lighting System',
-    CostImpact: 3000.0,
-  },
-  {
-    ChangeOrderID: 204,
-    ProjectID: 2,
-    Description: 'Change to Quartz Countertops',
-    CostImpact: 2500.0,
-  },
-  {
-    ChangeOrderID: 205,
-    ProjectID: 3,
-    Description: 'Additional Structural Supports',
-    CostImpact: 8000.0,
-  },
-  {
-    ChangeOrderID: 206,
-    ProjectID: 1,
-    Description: 'Extra Electrical Outlets',
-    CostImpact: 1200.0,
-  },
-];
-
-const invoice = [
-  {
-    InvoiceID: 3001,
-    JobID: 101,
-    AmountDue: 8000.0,
-    PaymentStatus: 'Partially Paid',
-    PAYMENTs: [
-      {
-        PaymentID: 7001,
-        Amount: 4000.0,
-        PaymentDate: '2024-04-15',
-        Method: 'Bank Transfer',
-      },
-      {
-        PaymentID: 7002,
-        Amount: 2000.0,
-        PaymentDate: '2024-05-01',
-        Method: 'Credit Card',
-      },
-    ],
-  },
-  {
-    InvoiceID: 3002,
-    JobID: 102,
-    AmountDue: 5000.0,
-    PaymentStatus: 'Paid',
-    PAYMENTs: [
-      {
-        PaymentID: 7003,
-        Amount: 5000.0,
-        PaymentDate: '2024-04-20',
-        Method: 'Bank Transfer',
-      },
-    ],
-  },
-  {
-    InvoiceID: 3003,
-    JobID: 103,
-    AmountDue: 12000.0,
-    PaymentStatus: 'Paid',
-    PAYMENTs: [
-      {
-        PaymentID: 7004,
-        Amount: 6000.0,
-        PaymentDate: '2024-03-05',
-        Method: 'Check',
-      },
-      {
-        PaymentID: 7005,
-        Amount: 6000.0,
-        PaymentDate: '2024-03-10',
-        Method: 'Bank Transfer',
-      },
-    ],
-  },
-  {
-    InvoiceID: 3004,
-    JobID: 104,
-    AmountDue: 20000.0,
-    PaymentStatus: 'Unpaid',
-    PAYMENTs: [],
-  },
-  {
-    InvoiceID: 3005,
-    JobID: 105,
-    AmountDue: 15000.0,
-    PaymentStatus: 'Partially Paid',
-    PAYMENTs: [
-      {
-        PaymentID: 7006,
-        Amount: 7500.0,
-        PaymentDate: '2024-07-25',
-        Method: 'Bank Transfer',
-      },
-    ],
-  },
-  {
-    InvoiceID: 3006,
-    JobID: 101,
-    AmountDue: 3500.0,
-    PaymentStatus: 'Unpaid',
-    PAYMENTs: [],
-  },
-  {
-    InvoiceID: 3007,
-    JobID: 103,
-    AmountDue: 2500.0,
-    PaymentStatus: 'Paid',
-    PAYMENTs: [
-      {
-        PaymentID: 7007,
-        Amount: 2500.0,
-        PaymentDate: '2024-03-15',
-        Method: 'Credit Card',
-      },
-    ],
-  },
-  {
-    InvoiceID: 3008,
-    JobID: 104,
-    AmountDue: 10000.0,
-    PaymentStatus: 'Partially Paid',
-    PAYMENTs: [
-      {
-        PaymentID: 7008,
-        Amount: 5000.0,
-        PaymentDate: '2024-07-30',
-        Method: 'Check',
-      },
-    ],
-  },
-];
+] as const;
