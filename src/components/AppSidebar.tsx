@@ -74,7 +74,7 @@ export default function AppSidebar() {
               }
               className='w-full rounded border bg-background px-2 py-1 text-xs'
             >
-              <option value=''>All Projects</option>
+              
               {projects.map((p) => (
                 <option key={p.ProjectID} value={p.ProjectID}>
                   {p.ProjectName}
@@ -93,7 +93,8 @@ export default function AppSidebar() {
             <SidebarMenu>
               {[
                 { title: 'Home', icon: Home, href: '/' },
-                { title: 'Finance', icon: ChartCandlestick, href: '/finance' },
+                { title: 'Finance', icon: ChartCandlestick, href: '/projects' },
+                { title: 'project details', icon: FolderOpen, href: '/projects/2' },
                 { title: 'Settings', icon: Settings, href: '/settings' },
               ].map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -110,7 +111,7 @@ export default function AppSidebar() {
         </SidebarGroup>
 
         {/* Projects */}
-        <Collapsible defaultOpen className='group/collapsible'>
+        {/* <Collapsible defaultOpen className='group/collapsible'>
           <SidebarGroup>
             <SidebarGroupLabel asChild>
               <CollapsibleTrigger>
@@ -140,7 +141,7 @@ export default function AppSidebar() {
               </SidebarGroupContent>
             </CollapsibleContent>
           </SidebarGroup>
-        </Collapsible>
+        </Collapsible> */}
 
         {/* Quotes */}
         <SidebarGroup>

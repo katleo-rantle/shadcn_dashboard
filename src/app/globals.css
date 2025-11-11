@@ -123,3 +123,67 @@
     @apply bg-background text-foreground;
   }
 }
+/* app/globals.css */
+/* .gantt_task_line.even { background-color: #f9fafb; }
+.gantt_task_line.odd  { background-color: #ffffff; }
+.gantt_task_content { font-weight: 500; }
+.actual { font-size: 0.75rem; color: #6b7280; }
+.proj   { font-size: 0.75rem; color: #1d4ed8; }
+.overrun { font-size: 0.75rem; color: #dc2626; font-weight: bold; } */
+
+/* GANTT VISUAL HIERARCHY */
+.gantt_grid_data .job-row {
+  background: linear-gradient(to right, #eef2ff, #f8fafc) !important;
+  font-weight: 600;
+  border-bottom: 2px solid #c7d2fe;
+}
+
+.gantt_grid_data .task-row {
+  background: #ffffff !important;
+}
+
+/* BAR STYLES */
+.job-bar .gantt_task_content {
+  background: #6366f1 !important; /* indigo */
+  color: white;
+  font-weight: 700;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.task-bar .gantt_task_content {
+  background: #3b82f6 !important; /* blue */
+  color: white;
+  border-radius: 4px;
+}
+
+/* TEXT INSIDE BAR */
+.gantt_task .actual { font-size: 0.75rem; color: #ddd; margin-top: 2px; }
+.gantt_task .proj   { font-size: 0.75rem; color: #a5f3fc; margin-top: 1px; }
+.gantt_task .overrun { 
+  display: block; 
+  background: #dc2626; 
+  color: white; 
+  font-size: 0.7rem; 
+  padding: 1px 4px; 
+  border-radius: 3px; 
+  margin-top: 3px;
+  font-weight: bold;
+}
+
+/* PROGRESS BAR */
+.gantt_task_progress {
+  background: rgba(255,255,255,0.3) !important;
+}
+
+/* COMPLETED TASK */
+.gantt_task_line[style*="background-color: rgb(16, 185, 129)"] .gantt_task_content,
+.gantt_task_line[style*="background: #10B981"] .gantt_task_content {
+  background: #10b981 !important;
+}
+
+/* BUDGET OVERRUN */
+.gantt_task_line[style*="background-color: rgb(239, 68, 68)"] .gantt_task_content,
+.gantt_task_line[style*="background: #EF4444"] .gantt_task_content {
+  background: #ef4444 !important;
+}

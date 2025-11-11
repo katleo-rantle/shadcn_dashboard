@@ -124,22 +124,22 @@ export const columns: ColumnDef<Project>[] = [
       return <div className='font-medium'>{formatted}</div>;
     },
   },
-  {
-    accessorKey: 'numJobs',
-    header: () => <div className='text-right'>Jobs</div>,
-    cell: ({ row }) => {
-      const numJobs: number = row.original.Jobs?.length ?? 0;
-      return <div className='text-right font-medium'>{numJobs}</div>;
-    },
-  },
-  {
-    accessorKey: 'numChangeOrders',
-    header: () => <div className='text-right'>Change Orders</div>,
-    cell: ({ row }) => {
-      const numChangeOrders: number = row.original.ChangeOrders?.length ?? 0;
-      return <div className='text-right font-medium'>{numChangeOrders}</div>;
-    },
-  },
+  // {
+  //   accessorKey: 'numJobs',
+  //   header: () => <div className='text-right'>Jobs</div>,
+  //   cell: ({ row }) => {
+  //     const numJobs: number = row.original.?.length ?? 0;
+  //     return <div className='text-right font-medium'>{numJobs}</div>;
+  //   },
+  // },
+  // {
+  //   accessorKey: 'numChangeOrders',
+  //   header: () => <div className='text-right'>Change Orders</div>,
+  //   cell: ({ row }) => {
+  //     const numChangeOrders: number = row.original.ChangeOrders?.length ?? 0;
+  //     return <div className='text-right font-medium'>{numChangeOrders}</div>;
+  //   },
+  // },
   {
     id: 'actions',
     cell: ({ row }) => {

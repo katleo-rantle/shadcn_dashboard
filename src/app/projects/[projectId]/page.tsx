@@ -11,26 +11,34 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCheck, MessageCircle } from 'lucide-react';
+import { useProject } from '@/context/ProjectContext';
+import { clients } from '@/lib/data';
+import EmployeeTimeSheet from '@/components/EmployeeTimeSheet';
+import GanttChartT from '@/components/GanttChartT';
 
 
 const SingleProject = () => {
   const completion = 66;
   const [viewMode, setViewMode] = useState<'gantt' | 'board'>('gantt');
+  const { jobsForSelectedProject, selectedProject } = useProject();
+  const client = clients.find(
+    (c) => c.ClientID === selectedProject?.ClientID
+  );
 
   return (
     <main className='overflow-y-auto p-4 md:p-6 md:max-w-9/10 2xl:max-w-7xl mx-auto'>
       <section className='flex flex-col md:flex-row md:items-center md:justify-between'>
         <div>
           <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-50'>
-            Island view
+            {selectedProject?.ProjectName}
           </h1>
           <p className='text-gray-600 dark:text-gray-100'>
-            commercial building
+            {selectedProject?.ProjectType}
           </p>
         </div>
         <div className='mt-4 md:mt-0 flex items-center'>
           <Badge className='bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'>
-            in progress
+            {selectedProject?.Status}
           </Badge>
           <Button className='hover:cursor-pointer ml-4'>edit project</Button>
         </div>
@@ -38,7 +46,7 @@ const SingleProject = () => {
 
       <section className='mt-4 flex flex-col gap-8'>
         <AppCard
-          title='Island view'
+          title={client?.Address || 'No address available'}
           description={
             <p>
               completion: <span className='font-bold'>{completion}%</span>
@@ -50,19 +58,25 @@ const SingleProject = () => {
             <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mt-4'>
               <div className='text-center'>
                 <p className='text-sm text-gray-500'>Start date</p>
-                <p className='text-sm font-medium'>September 20 2025</p>
+                <p className='text-sm font-medium'>
+                  {selectedProject?.StartDate}
+                </p>
               </div>
               <div className='text-center'>
                 <p className='text-sm text-gray-500'>End date</p>
-                <p className='text-sm font-medium'>September 20 2026</p>
+                <p className='text-sm font-medium'>
+                  {selectedProject?.EndDate}
+                </p>
               </div>
               <div className='text-center'>
                 <p className='text-sm text-gray-500'>Budget</p>
-                <p className='text-sm font-medium'>R 350,000</p>
+                <p className='text-sm font-medium'>
+                  R {selectedProject?.QuotedCost}
+                </p>
               </div>
               <div className='text-center'>
                 <p className='text-sm text-gray-500'>Client</p>
-                <p className='text-sm font-medium'>Mrs Zondi</p>
+                <p className='text-sm font-medium'>{client?.ClientName}</p>
               </div>
             </div>
           </div>
@@ -70,11 +84,12 @@ const SingleProject = () => {
 
         {/* Tabs */}
         <Tabs defaultValue='overview'>
-          <TabsList className='grid w-full grid-cols-5'>
+          <TabsList className='grid w-full grid-cols-6'>
             <TabsTrigger value='overview'>Overview</TabsTrigger>
             <TabsTrigger value='tasks'>
               <CheckCheck className='w-4 h-4 mr-1' /> Tasks
             </TabsTrigger>
+            <TabsTrigger value='timesheet'>timesheet</TabsTrigger>
             <TabsTrigger value='financials'>Financials</TabsTrigger>
             <TabsTrigger value='documents'>Documents</TabsTrigger>
             <TabsTrigger value='chat'>
@@ -83,7 +98,7 @@ const SingleProject = () => {
           </TabsList>
 
           <TabsContent value='overview'>
-            <Overview />
+            <Overview projectDesc={selectedProject?.Description || ''} />
           </TabsContent>
 
           <TabsContent value='tasks' className='mt-4'>
@@ -113,11 +128,16 @@ const SingleProject = () => {
 
             {/* Conditional Rendering */}
             <div className='mt-2'>
-              {viewMode === 'gantt' ? <GanttChart /> : <Taskboard />}
+              {viewMode === 'gantt' ? <GanttChartT /> : <Taskboard />}
             </div>
           </TabsContent>
 
           {/* Other tabs */}
+          <TabsContent value='timesheet'>
+            <p className='text-muted-foreground'>
+              <EmployeeTimeSheet />
+            </p>
+          </TabsContent>
           <TabsContent value='financials'>
             <p className='text-muted-foreground'>
               Financial details coming soon...
