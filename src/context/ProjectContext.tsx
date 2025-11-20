@@ -13,20 +13,13 @@ export type ProjectContextType = {
   jobsForSelectedProject: Job[];
 };
 
-const ProjectContext = React.createContext<ProjectContextType | undefined>(
-  undefined
-);
+const ProjectContext = React.createContext<ProjectContextType | undefined>(undefined);
 
-export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [selectedProjectId, setSelectedProjectId] = React.useState<
-    number | null
-  >(projects.length > 0 ? projects[0].ProjectID : null);
+export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // This is the ONLY line you needed to change
+  const [selectedProjectId, setSelectedProjectId] = React.useState<number | null>(null);
 
-  const selectedProject = projects.find(
-    (p) => p.ProjectID === selectedProjectId
-  );
+  const selectedProject = projects.find((p) => p.ProjectID === selectedProjectId);
 
   const jobsForSelectedProject = React.useMemo(() => {
     if (!selectedProjectId) return [];
