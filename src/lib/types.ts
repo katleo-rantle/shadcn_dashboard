@@ -1,4 +1,4 @@
-// @/lib/types.ts
+// --- Core Type Definitions ---
 
 export const projectTypes = [
   'Commercial',
@@ -11,27 +11,104 @@ export const projectTypes = [
 
 export type ProjectType = (typeof projectTypes)[number];
 
-import {
-  projects,
-  jobs,
-  tasks,
-  employees,
-  resourceAssignments,
-  taskActuals,
-} from './data';
+export type ProjectStatus =
+  | 'In Progress'
+  | 'Active'
+  | 'Not Started'
+  | 'Completed'
+  | 'On Hold'
+  | 'Planned'; // Added 'Planned' here for consistency with the component logic
 
-export interface ChnageOrder {
+export type TaskStatus =
+  | 'Completed'
+  | 'In Progress'
+  | 'Active'
+  | 'Not Started';
+
+export type ChangeOrderStatus = 'Open' | 'Closed' | 'In Review' | 'Approved' | 'Pending';
+
+
+// --- Entity Interfaces (Explicitly Defined) ---
+
+export interface Project {
+  ProjectID: number;
+  ClientID: number;
+  ProjectName: string;
+  ProjectType: ProjectType;
+  Description: string;
+  QuotedCost: number;
+  Status: ProjectStatus;
+  QuoteDate: string;
+  StartDate: string;
+  EndDate: string;
+}
+
+export interface Job {
+  ProjectID: number;
+  JobID: number;
+  JobName: string;
+  JobBudget: number;
+  Status: ProjectStatus; // Using ProjectStatus for consistency
+  PlannedStartDate: string;
+  PlannedEndDate: string;
+  ActualStartDate: string | null;
+  ActualEndDate: string | null;
+}
+
+export interface Task {
+  TaskID: number;
+  JobID: number;
+  TaskName: string;
+  TaskBudget: number;
+  TaskProgress: number;
+  Status: TaskStatus;
+  PlannedStartDate: string;
+  PlannedEndDate: string;
+  ActualStartDate: string | null;
+  ActualEndDate: string | null;
+  DueDate?: string;
+}
+
+export interface ChangeOrder {
   ChangeOrderID: number;
   ProjectID: number;
   Description: string;
-  CostImpact : number;
+  CostImpact: number;
   DateIssued: string;
-  Status: 'Open' | 'Closed' | 'In Review';
+  Status: ChangeOrderStatus;
 }
 
-export type Project = (typeof projects)[number];
-export type Job = (typeof jobs)[number];
-export type Task = (typeof tasks)[number];
-export type Employee = (typeof employees)[number];
-export type ResourceAssignment = (typeof resourceAssignments)[number];
-export type TaskActual = (typeof taskActuals)[number];
+export interface Client {
+  ClientID: number;
+  ClientName: string;
+  ContactPerson: string;
+  Email: string;
+  Phone: string;
+  Address: string;
+  BillingAddress: string;
+}
+
+// --- Placeholder Definitions for Referenced Types ---
+
+export interface Employee {
+  EmployeeID: number;
+  Name: string;
+  Position: 'General Worker' | 'Skilled Labor' | 'Bricklayer' | 'Experienced';
+  DailyRate: number;
+}
+
+export interface ResourceAssignment {
+  AssignmentID: number;
+  TaskID: number;
+  EmployeeID: number;
+  Date: string;
+  Hours: number;
+}
+
+export interface TaskActual {
+  ActualID: number;
+  TaskID: number;
+  Date: string;
+  Cost: number;
+  Notes: string;
+}

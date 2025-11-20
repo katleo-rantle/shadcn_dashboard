@@ -964,7 +964,7 @@ const Taskboard = () => {
                     TaskID: Number(editingTask.taskId),
                     TaskName: editingTask.initial?.TaskName,
                     TaskBudget: editingTask.initial?.TaskBudget,
-                    TaskProgress: editingTask.initial?.TaskProgress,
+                   // TaskProgress: editingTask.initial?.TaskProgress,
                     jobId: editingTask.jobId,
                     DueDate: editingTask.initial?.DueDate,
                   }

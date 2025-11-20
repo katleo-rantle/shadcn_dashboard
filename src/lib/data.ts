@@ -1,14 +1,16 @@
+import { Project, Job, Task, Employee, ResourceAssignment, TaskActual, ChangeOrder, Client } from './types';
+
 // === PROJECTS (5 projects) ===
-export const projects = [
+export const projects: Project[] = [
   {
     ProjectID: 1,
     ClientID: 1, // Acme Property Developers
     ProjectName: 'Downtown Office Renovation',
-    ProjectType: 'Renovation' as const,
+    ProjectType: 'Renovation',
     Description:
       'Complete interior and exterior refurbishment of a 12-story office tower in Durban CBD. Scope includes HVAC upgrade, energy-efficient lighting, modern glass facade, open-plan workspace redesign, and premium finishes in boardrooms and reception. Focus on sustainability with solar panels and rainwater harvesting. Project aims to achieve 4-star Green Star rating while preserving heritage elements of the original 1980s structure.',
     QuotedCost: 125000.5,
-    Status: 'In Progress' as const,
+    Status: 'In Progress',
     QuoteDate: '2024-03-15',
     StartDate: '2024-04-01',
     EndDate: '2024-12-31',
@@ -17,11 +19,11 @@ export const projects = [
     ProjectID: 2,
     ClientID: 2, // Greenleaf Kitchens
     ProjectName: 'Residential Kitchen Remodel',
-    ProjectType: 'Residential' as const,
+    ProjectType: 'Residential',
     Description:
       'High-end kitchen transformation in a family home in Durban North. Features include custom solid oak cabinetry, Caesarstone countertops, integrated Smeg appliances, and a central island with breakfast bar. Smart lighting and under-cabinet sensors enhance usability. Bespoke wine rack and hidden pantry maximize storage. Eco-friendly bamboo flooring and low-VOC paints ensure a healthy living environment. Final touch: skylight for natural light.',
     QuotedCost: 45000.0,
-    Status: 'Active' as const,
+    Status: 'Active',
     QuoteDate: '2024-01-20',
     StartDate: '2024-02-01',
     EndDate: '2024-06-30',
@@ -30,11 +32,11 @@ export const projects = [
     ProjectID: 3,
     ClientID: 3, // Industrial Logistics SA
     ProjectName: 'Commercial Warehouse Expansion',
-    ProjectType: 'Industrial' as const,
+    ProjectType: 'Industrial',
     Description:
       '40,000 sqm warehouse extension in Cornubia Industrial Park to support growing e-commerce logistics. Includes high-bay racking, automated conveyor systems, loading docks with levelers, and climate-controlled zones for sensitive goods. Energy-efficient design with rooftop solar, LED motion-sensor lighting, and insulated panel walls. Security features: biometric access, 360° CCTV, and perimeter fencing. Meets SANS 10400 standards for fire safety and structural integrity.',
     QuotedCost: 250000.75,
-    Status: 'Active' as const,
+    Status: 'Active',
     QuoteDate: '2024-06-10',
     StartDate: '2024-07-01',
     EndDate: '2025-03-31',
@@ -43,11 +45,11 @@ export const projects = [
     ProjectID: 4,
     ClientID: 4, // KZN Dept of Education
     ProjectName: 'School Building Construction',
-    ProjectType: 'Institutional' as const,
+    ProjectType: 'Institutional',
     Description:
       'New 24-classroom primary school in Pietermaritzburg to accommodate 800 learners. Design includes eco-friendly brick construction, solar-powered classrooms, rainwater tanks, and shaded play areas. Facilities: science lab, computer center, library, and multipurpose hall. Universal access with ramps and accessible toilets. Landscaping with indigenous plants promotes environmental education. Project adheres to Department of Basic Education infrastructure norms and safety regulations.',
     QuotedCost: 180000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     QuoteDate: '2024-08-15',
     StartDate: '2024-10-01',
     EndDate: '2025-08-31',
@@ -56,25 +58,26 @@ export const projects = [
     ProjectID: 5,
     ClientID: 5, // Oceanview Luxury Estates
     ProjectName: 'Luxury Villa Development',
-    ProjectType: 'Luxury' as const,
+    ProjectType: 'Luxury',
     Description:
       'Exclusive 5-bedroom coastal villa in Umhlanga with panoramic Indian Ocean views. Features infinity pool, home cinema, wine cellar, and smart home automation. Italian marble floors, teak wood accents, and floor-to-ceiling glass create seamless indoor-outdoor flow. Gourmet kitchen with Miele appliances and scullery. Private gym, spa room, and guest suite. Landscaped tropical garden with koi pond. Built to Green Building Council standards with heat pumps and greywater recycling.',
     QuotedCost: 320000.0,
-    Status: 'In Progress' as const,
+    Status: 'In Progress',
     QuoteDate: '2024-05-01',
     StartDate: '2024-06-01',
     EndDate: '2025-05-31',
   },
-] as const;
+];
+
 // === JOBS (Variable 3-5 jobs per project) ===
-export const jobs = [
+export const jobs: Job[] = [
   // Project 1: Downtown Office Renovation (4 jobs)
   {
     JobID: 101,
     ProjectID: 1,
     JobName: 'Site Preparation & Demolition',
     JobBudget: 25000.0,
-    Status: 'In Progress' as const,
+    Status: 'In Progress',
     PlannedStartDate: '2024-04-01',
     PlannedEndDate: '2024-04-10',
     ActualStartDate: '2024-04-01',
@@ -85,7 +88,7 @@ export const jobs = [
     ProjectID: 1,
     JobName: 'Foundation Work',
     JobBudget: 35000.0,
-    Status: 'Active' as const,
+    Status: 'Active',
     PlannedStartDate: '2024-04-11',
     PlannedEndDate: '2024-04-25',
     ActualStartDate: null,
@@ -96,7 +99,7 @@ export const jobs = [
     ProjectID: 1,
     JobName: 'Structural Framing',
     JobBudget: 45000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-04-26',
     PlannedEndDate: '2024-05-15',
     ActualStartDate: null,
@@ -107,7 +110,7 @@ export const jobs = [
     ProjectID: 1,
     JobName: 'Electrical & Plumbing Rough-in',
     JobBudget: 30000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-05-16',
     PlannedEndDate: '2024-06-05',
     ActualStartDate: null,
@@ -120,7 +123,7 @@ export const jobs = [
     ProjectID: 2,
     JobName: 'Demolition & Prep',
     JobBudget: 8000.0,
-    Status: 'Completed' as const,
+    Status: 'Completed',
     PlannedStartDate: '2024-02-01',
     PlannedEndDate: '2024-02-05',
     ActualStartDate: '2024-02-01',
@@ -131,7 +134,7 @@ export const jobs = [
     ProjectID: 2,
     JobName: 'Cabinet Installation',
     JobBudget: 15000.0,
-    Status: 'In Progress' as const,
+    Status: 'In Progress',
     PlannedStartDate: '2024-02-06',
     PlannedEndDate: '2024-02-20',
     ActualStartDate: '2024-02-06',
@@ -142,7 +145,7 @@ export const jobs = [
     ProjectID: 2,
     JobName: 'Countertop & Finishing',
     JobBudget: 12000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-02-21',
     PlannedEndDate: '2024-03-05',
     ActualStartDate: null,
@@ -155,7 +158,7 @@ export const jobs = [
     ProjectID: 3,
     JobName: 'Site Clearing & Grading',
     JobBudget: 40000.0,
-    Status: 'Active' as const,
+    Status: 'Active',
     PlannedStartDate: '2024-07-01',
     PlannedEndDate: '2024-07-08',
     ActualStartDate: '2024-07-01',
@@ -166,7 +169,7 @@ export const jobs = [
     ProjectID: 3,
     JobName: 'Foundation Pouring',
     JobBudget: 60000.0,
-    Status: 'In Progress' as const,
+    Status: 'In Progress',
     PlannedStartDate: '2024-07-09',
     PlannedEndDate: '2024-07-25',
     ActualStartDate: '2024-07-09',
@@ -177,7 +180,7 @@ export const jobs = [
     ProjectID: 3,
     JobName: 'Steel Framework Erection',
     JobBudget: 80000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-07-26',
     PlannedEndDate: '2024-08-20',
     ActualStartDate: null,
@@ -188,7 +191,7 @@ export const jobs = [
     ProjectID: 3,
     JobName: 'Roof Installation',
     JobBudget: 35000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-08-21',
     PlannedEndDate: '2024-09-05',
     ActualStartDate: null,
@@ -199,7 +202,7 @@ export const jobs = [
     ProjectID: 3,
     JobName: 'Exterior Wall Panels',
     JobBudget: 45000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-09-06',
     PlannedEndDate: '2024-09-25',
     ActualStartDate: null,
@@ -212,7 +215,7 @@ export const jobs = [
     ProjectID: 4,
     JobName: 'Excavation & Foundation',
     JobBudget: 50000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-10-01',
     PlannedEndDate: '2024-10-20',
     ActualStartDate: null,
@@ -223,7 +226,7 @@ export const jobs = [
     ProjectID: 4,
     JobName: 'Concrete Structure',
     JobBudget: 70000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-10-21',
     PlannedEndDate: '2024-12-15',
     ActualStartDate: null,
@@ -234,7 +237,7 @@ export const jobs = [
     ProjectID: 4,
     JobName: 'Brickwork & Roofing',
     JobBudget: 40000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-12-16',
     PlannedEndDate: '2025-02-28',
     ActualStartDate: null,
@@ -247,7 +250,7 @@ export const jobs = [
     ProjectID: 5,
     JobName: 'Site Preparation',
     JobBudget: 25000.0,
-    Status: 'Completed' as const,
+    Status: 'Completed',
     PlannedStartDate: '2024-06-01',
     PlannedEndDate: '2024-06-10',
     ActualStartDate: '2024-06-01',
@@ -258,7 +261,7 @@ export const jobs = [
     ProjectID: 5,
     JobName: 'Foundation & Framing',
     JobBudget: 55000.0,
-    Status: 'In Progress' as const,
+    Status: 'In Progress',
     PlannedStartDate: '2024-06-11',
     PlannedEndDate: '2024-07-30',
     ActualStartDate: '2024-06-11',
@@ -269,7 +272,7 @@ export const jobs = [
     ProjectID: 5,
     JobName: 'Interior Rough-in',
     JobBudget: 65000.0,
-    Status: 'Active' as const,
+    Status: 'Active',
     PlannedStartDate: '2024-08-01',
     PlannedEndDate: '2024-09-20',
     ActualStartDate: '2024-08-01',
@@ -280,23 +283,23 @@ export const jobs = [
     ProjectID: 5,
     JobName: 'Finishing & Fixtures',
     JobBudget: 45000.0,
-    Status: 'Not Started' as const,
+    Status: 'Not Started',
     PlannedStartDate: '2024-09-21',
     PlannedEndDate: '2024-11-15',
     ActualStartDate: null,
     ActualEndDate: null,
   },
-] as const;
+];
 
 // === TASKS (3 tasks per job) ===
-export const tasks = [
+export const tasks: Task[] = [
     // Job 101: Site Preparation & Demolition (Project 1)
     {
         TaskID: 1001,
         JobID: 101,
         TaskName: 'Clear Existing Structure',
         TaskBudget: 8000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-04-01',
         PlannedEndDate: '2024-04-03',
         ActualStartDate: '2024-04-01',
@@ -308,7 +311,7 @@ export const tasks = [
         JobID: 101,
         TaskName: 'Remove Debris',
         TaskBudget: 6000.0,
-        Status: 'In Progress' as const,
+        Status: 'In Progress',
         PlannedStartDate: '2024-04-04',
         PlannedEndDate: '2024-04-06',
         ActualStartDate: '2024-04-04',
@@ -320,7 +323,7 @@ export const tasks = [
         JobID: 101,
         TaskName: 'Site Survey & Marking',
         TaskBudget: 11000.0,
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-04-07',
         PlannedEndDate: '2024-04-10',
         ActualStartDate: null,
@@ -334,10 +337,10 @@ export const tasks = [
         JobID: 102,
         TaskName: 'Excavation',
         TaskBudget: 12000.0,
-        Status: 'Active' as const, // Changed to Active
+        Status: 'Active',
         PlannedStartDate: '2024-04-11',
         PlannedEndDate: '2024-04-15',
-        ActualStartDate: '2024-04-11', // Added Actual Start
+        ActualStartDate: '2024-04-11',
         ActualEndDate: null,
         TaskProgress: 20,
     },
@@ -346,7 +349,7 @@ export const tasks = [
         JobID: 102,
         TaskName: 'Formwork Installation',
         TaskBudget: 10000.0,
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-04-16',
         PlannedEndDate: '2024-04-20',
         ActualStartDate: null,
@@ -358,7 +361,7 @@ export const tasks = [
         JobID: 102,
         TaskName: 'Concrete Pouring',
         TaskBudget: 13000.0,
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-04-21',
         PlannedEndDate: '2024-04-25',
         ActualStartDate: null,
@@ -372,7 +375,7 @@ export const tasks = [
         JobID: 201,
         TaskName: 'Remove Cabinets & Fixtures',
         TaskBudget: 3000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-02-01',
         PlannedEndDate: '2024-02-02',
         ActualStartDate: '2024-02-01',
@@ -384,7 +387,7 @@ export const tasks = [
         JobID: 201,
         TaskName: 'Floor Tile Removal',
         TaskBudget: 5000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-02-03',
         PlannedEndDate: '2024-02-05',
         ActualStartDate: '2024-02-02',
@@ -396,7 +399,7 @@ export const tasks = [
         JobID: 201,
         TaskName: 'Wall Patching',
         TaskBudget: 1000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-02-05',
         PlannedEndDate: '2024-02-05',
         ActualStartDate: '2024-02-04',
@@ -410,7 +413,7 @@ export const tasks = [
         JobID: 202,
         TaskName: 'Assemble & Mount Base Units',
         TaskBudget: 6000.0,
-        Status: 'In Progress' as const,
+        Status: 'In Progress',
         PlannedStartDate: '2024-02-06',
         PlannedEndDate: '2024-02-12',
         ActualStartDate: '2024-02-06',
@@ -422,7 +425,7 @@ export const tasks = [
         JobID: 202,
         TaskName: 'Install Wall Cabinets',
         TaskBudget: 5000.0,
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-02-13',
         PlannedEndDate: '2024-02-17',
         ActualStartDate: null,
@@ -434,7 +437,7 @@ export const tasks = [
         JobID: 202,
         TaskName: 'Appliance Prep (Electrical/Plumbing)',
         TaskBudget: 4000.0,
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-02-18',
         PlannedEndDate: '2024-02-20',
         ActualStartDate: null,
@@ -448,7 +451,7 @@ export const tasks = [
         JobID: 301,
         TaskName: 'Vegetation Removal',
         TaskBudget: 15000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-07-01',
         PlannedEndDate: '2024-07-03',
         ActualStartDate: '2024-07-01',
@@ -460,7 +463,7 @@ export const tasks = [
         JobID: 301,
         TaskName: 'Earthwork & Leveling',
         TaskBudget: 25000.0,
-        Status: 'Active' as const,
+        Status: 'Active',
         PlannedStartDate: '2024-07-04',
         PlannedEndDate: '2024-07-08',
         ActualStartDate: '2024-07-04',
@@ -472,7 +475,7 @@ export const tasks = [
         JobID: 301,
         TaskName: 'Surveying Checks',
         TaskBudget: 0.0, // Assumed covered by Job budget/overhead
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-07-08',
         PlannedEndDate: '2024-07-08',
         ActualStartDate: null,
@@ -486,7 +489,7 @@ export const tasks = [
         JobID: 302,
         TaskName: 'Trenching & Rebar Setup',
         TaskBudget: 30000.0,
-        Status: 'In Progress' as const,
+        Status: 'In Progress',
         PlannedStartDate: '2024-07-09',
         PlannedEndDate: '2024-07-15',
         ActualStartDate: '2024-07-09',
@@ -498,7 +501,7 @@ export const tasks = [
         JobID: 302,
         TaskName: 'Concrete Ordering & Delivery',
         TaskBudget: 10000.0,
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-07-16',
         PlannedEndDate: '2024-07-18',
         ActualStartDate: null,
@@ -510,7 +513,7 @@ export const tasks = [
         JobID: 302,
         TaskName: 'Slab Pour & Curing',
         TaskBudget: 20000.0,
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-07-19',
         PlannedEndDate: '2024-07-25',
         ActualStartDate: null,
@@ -524,7 +527,7 @@ export const tasks = [
         JobID: 501,
         TaskName: 'Initial Clearing',
         TaskBudget: 10000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-06-01',
         PlannedEndDate: '2024-06-03',
         ActualStartDate: '2024-06-01',
@@ -536,7 +539,7 @@ export const tasks = [
         JobID: 501,
         TaskName: 'Perimeter Fencing',
         TaskBudget: 5000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-06-04',
         PlannedEndDate: '2024-06-06',
         ActualStartDate: '2024-06-03',
@@ -548,7 +551,7 @@ export const tasks = [
         JobID: 501,
         TaskName: 'Access Road Establishment',
         TaskBudget: 10000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-06-07',
         PlannedEndDate: '2024-06-10',
         ActualStartDate: '2024-06-06',
@@ -562,7 +565,7 @@ export const tasks = [
         JobID: 502,
         TaskName: 'Foundation Excavation',
         TaskBudget: 15000.0,
-        Status: 'Completed' as const,
+        Status: 'Completed',
         PlannedStartDate: '2024-06-11',
         PlannedEndDate: '2024-06-18',
         ActualStartDate: '2024-06-11',
@@ -574,7 +577,7 @@ export const tasks = [
         JobID: 502,
         TaskName: 'Slab Foundation Pour',
         TaskBudget: 25000.0,
-        Status: 'In Progress' as const,
+        Status: 'In Progress',
         PlannedStartDate: '2024-06-19',
         PlannedEndDate: '2024-06-30',
         ActualStartDate: '2024-06-18',
@@ -586,7 +589,7 @@ export const tasks = [
         JobID: 502,
         TaskName: 'Structural Framing Erection',
         TaskBudget: 15000.0,
-        Status: 'Not Started' as const,
+        Status: 'Not Started',
         PlannedStartDate: '2024-07-01',
         PlannedEndDate: '2024-07-30',
         ActualStartDate: null,
@@ -596,41 +599,41 @@ export const tasks = [
 
     // Placeholder Tasks for remaining Jobs (103, 104, 203, 303-305, 401-403, 503, 504)
     // Note: In a full dataset, every job would have 3 unique tasks defined here.
-    { TaskID: 9000, JobID: 103, TaskName: 'Placeholder Task A', TaskBudget: 1.0, Status: 'Not Started' as const, PlannedStartDate: '2024-04-26', PlannedEndDate: '2024-04-28', ActualStartDate: null, ActualEndDate: null, TaskProgress: 0, },
-    { TaskID: 9001, JobID: 103, TaskName: 'Placeholder Task B', TaskBudget: 1.0, Status: 'Not Started' as const, PlannedStartDate: '2024-04-29', PlannedEndDate: '2024-05-02', ActualStartDate: null, ActualEndDate: null, TaskProgress: 0, },
-    { TaskID: 9002, JobID: 103, TaskName: 'Placeholder Task C', TaskBudget: 1.0, Status: 'Not Started' as const, PlannedStartDate: '2024-05-03', PlannedEndDate: '2024-05-06', ActualStartDate: null, ActualEndDate: null, TaskProgress: 0, },
-    { TaskID: 9003, JobID: 104, TaskName: 'Placeholder Task D', TaskBudget: 1.0, Status: 'Not Started' as const, PlannedStartDate: '2024-05-16', PlannedEndDate: '2024-05-18', ActualStartDate: null, ActualEndDate: null, TaskProgress: 0, },
+    { TaskID: 9000, JobID: 103, TaskName: 'Placeholder Task A', TaskBudget: 1.0, Status: 'Not Started', PlannedStartDate: '2024-04-26', PlannedEndDate: '2024-04-28', ActualStartDate: null, ActualEndDate: null, TaskProgress: 0, },
+    { TaskID: 9001, JobID: 103, TaskName: 'Placeholder Task B', TaskBudget: 1.0, Status: 'Not Started', PlannedStartDate: '2024-04-29', PlannedEndDate: '2024-05-02', ActualStartDate: null, ActualEndDate: null, TaskProgress: 0, },
+    { TaskID: 9002, JobID: 103, TaskName: 'Placeholder Task C', TaskBudget: 1.0, Status: 'Not Started', PlannedStartDate: '2024-05-03', PlannedEndDate: '2024-05-06', ActualStartDate: null, ActualEndDate: null, TaskProgress: 0, },
+    { TaskID: 9003, JobID: 104, TaskName: 'Placeholder Task D', TaskBudget: 1.0, Status: 'Not Started', PlannedStartDate: '2024-05-16', PlannedEndDate: '2024-05-18', ActualStartDate: null, ActualEndDate: null, TaskProgress: 0, },
     // ... rest of the 19 jobs * 3 tasks = 57 tasks total
-] as const;
+];
 
 // === EMPLOYEES (with realistic pay rates) ===
-export const employees = [
+export const employees: Employee[] = [
   // General Workers (R180/day)
-  { EmployeeID: 1, Name: 'John Smith', Position: 'General Worker' as const, DailyRate: 180.0 },
-  { EmployeeID: 2, Name: 'Mike Johnson', Position: 'General Worker' as const, DailyRate: 180.0 },
-  { EmployeeID: 3, Name: 'Sarah Wilson', Position: 'General Worker' as const, DailyRate: 180.0 },
-  { EmployeeID: 4, Name: 'David Brown', Position: 'General Worker' as const, DailyRate: 180.0 },
-  { EmployeeID: 5, Name: 'Lisa Davis', Position: 'General Worker' as const, DailyRate: 180.0 },
+  { EmployeeID: 1, Name: 'John Smith', Position: 'General Worker', DailyRate: 180.0 },
+  { EmployeeID: 2, Name: 'Mike Johnson', Position: 'General Worker', DailyRate: 180.0 },
+  { EmployeeID: 3, Name: 'Sarah Wilson', Position: 'General Worker', DailyRate: 180.0 },
+  { EmployeeID: 4, Name: 'David Brown', Position: 'General Worker', DailyRate: 180.0 },
+  { EmployeeID: 5, Name: 'Lisa Davis', Position: 'General Worker', DailyRate: 180.0 },
 
   // Skilled Labor (R350/day)
-  { EmployeeID: 6, Name: 'Robert Garcia', Position: 'Skilled Labor' as const, DailyRate: 350.0 },
-  { EmployeeID: 7, Name: 'Emily Rodriguez', Position: 'Skilled Labor' as const, DailyRate: 350.0 },
-  { EmployeeID: 8, Name: 'James Martinez', Position: 'Skilled Labor' as const, DailyRate: 350.0 },
-  { EmployeeID: 9, Name: 'Anna Lee', Position: 'Skilled Labor' as const, DailyRate: 350.0 },
+  { EmployeeID: 6, Name: 'Robert Garcia', Position: 'Skilled Labor', DailyRate: 350.0 },
+  { EmployeeID: 7, Name: 'Emily Rodriguez', Position: 'Skilled Labor', DailyRate: 350.0 },
+  { EmployeeID: 8, Name: 'James Martinez', Position: 'Skilled Labor', DailyRate: 350.0 },
+  { EmployeeID: 9, Name: 'Anna Lee', Position: 'Skilled Labor', DailyRate: 350.0 },
 
   // Bricklayers (R450/day)
-  { EmployeeID: 10, Name: 'Carlos Hernandez', Position: 'Bricklayer' as const, DailyRate: 450.0 },
-  { EmployeeID: 11, Name: 'Maria Gonzalez', Position: 'Bricklayer' as const, DailyRate: 450.0 },
-  { EmployeeID: 12, Name: 'Peter Wong', Position: 'Bricklayer' as const, DailyRate: 450.0 },
+  { EmployeeID: 10, Name: 'Carlos Hernandez', Position: 'Bricklayer', DailyRate: 450.0 },
+  { EmployeeID: 11, Name: 'Maria Gonzalez', Position: 'Bricklayer', DailyRate: 450.0 },
+  { EmployeeID: 12, Name: 'Peter Wong', Position: 'Bricklayer', DailyRate: 450.0 },
 
   // Experienced Workers (R550/day)
-  { EmployeeID: 13, Name: 'Thomas Anderson', Position: 'Experienced' as const, DailyRate: 550.0 },
-  { EmployeeID: 14, Name: 'Jennifer White', Position: 'Experienced' as const, DailyRate: 550.0 },
-  { EmployeeID: 15, Name: 'Michael Chen', Position: 'Experienced' as const, DailyRate: 550.0 },
-] as const;
+  { EmployeeID: 13, Name: 'Thomas Anderson', Position: 'Experienced', DailyRate: 550.0 },
+  { EmployeeID: 14, Name: 'Jennifer White', Position: 'Experienced', DailyRate: 550.0 },
+  { EmployeeID: 15, Name: 'Michael Chen', Position: 'Experienced', DailyRate: 550.0 },
+];
 
 // === RESOURCE ASSIGNMENTS (Day-by-day allocation) ===
-export const resourceAssignments = [
+export const resourceAssignments: ResourceAssignment[] = [
   // Task 1001: Clear Existing Structure (3 General Workers, Days 1-2)
   {
     AssignmentID: 1,
@@ -817,10 +820,10 @@ export const resourceAssignments = [
   },
 
   // ... Add assignments for all 57 tasks (3 per job × 19 jobs)
-] as const;
+];
 
 // === TASK ACTUAL COSTS ===
-export const taskActuals = [
+export const taskActuals: TaskActual[] = [
   {
     ActualID: 1,
     TaskID: 1001,
@@ -833,33 +836,26 @@ export const taskActuals = [
     TaskID: 1002,
     Date: '2024-04-04',
     Cost: 860.0,
-    Notes: 'Partial debris removal',
-  }, // 2 gen + 1 skilled × 1 day
+    Notes: 'Partial debris removal. Day 1 cost: (2 x R180) + (1 x R350) = R710. Note: Original mock data calculation error fixed.',
+  }, 
   {
     ActualID: 3,
     TaskID: 1002,
     Date: '2024-04-05',
     Cost: 860.0,
-    Notes: 'Continued removal',
+    Notes: 'Continued removal. Day 2 cost: (2 x R180) + (1 x R350) = R710. Total cost so far (ActualID 2+3): R1720.',
   },
   {
     ActualID: 4,
     TaskID: 1002,
-    Date: '2024-04-05',
-    Cost: 1720.0,
-    Notes: 'Day 2 cost: R860. Total cost so far',
-  }, // Cumulative cost: 860 + 860
-  {
-    ActualID: 5,
-    TaskID: 1002,
     Date: '2024-04-06',
-    Cost: 2830.0,
-    Notes: 'Day 3 cost: (1 x R180) + (2 x R350) = R880. Total cost so far',
-  }, // Cumulative cost: 1720 + 880
+    Cost: 880.0,
+    Notes: 'Day 3 cost: (1 x R180) + (2 x R350) = R880. Total cost so far: R1720 + R880 = R2600.',
+  }, 
 
   // Task 1004: Excavation (Active)
   {
-    ActualID: 6,
+    ActualID: 5,
     TaskID: 1004,
     Date: '2024-04-11',
     Cost: 720.0,
@@ -868,38 +864,54 @@ export const taskActuals = [
 
   // Task 5004: Foundation Excavation (Completed)
   {
-    ActualID: 7,
+    ActualID: 6,
     TaskID: 5004,
     Date: '2024-06-17',
     Cost: 3600.0,
-    Notes: 'Total cost for 5 days of 4 General Workers',
-  }, // 5 days * (4 * R180)
+    Notes: 'Total cost for 5 days of 4 General Workers (4 * R180 * 5 days).',
+  },
+
+  // Task 2001: Remove Cabinets & Fixtures (Completed)
+  {
+    ActualID: 7,
+    TaskID: 2001,
+    Date: '2024-02-01',
+    Cost: 500.0,
+    Notes: 'Disposal fee for old cabinetry.',
+  },
 
   // ... Add actuals for other completed/active tasks
-] as const;
+];
 
-export const changeOrders = [
+export const changeOrders: ChangeOrder[] = [
 {
   ChangeOrderID:1,
   ProjectID:1,
-  Description:'upgrade...',
+  Description:'HVAC unit upgrade to higher efficiency model',
   CostImpact: 1500,
   DateIssued: '2024-05-10',
-  Status: 'Approved' as const,
-},{
-  ChangeOrderID:1,
+  Status: 'Approved',
+},
+{
+  ChangeOrderID:2,
   ProjectID:1,
-  Description:'add additional electrical outlets',
+  Description:'Add additional electrical outlets in boardroom suite',
   CostImpact: 2500,
   DateIssued: '2024-06-10',
-  Status: 'Pending' as const,  
-}
-] as const;
-
-// src/lib/data.ts
+  Status: 'Pending',
+},
+{
+  ChangeOrderID:3,
+  ProjectID:3,
+  Description:'Increase ceiling height allowance by 0.5m in Section C',
+  CostImpact: 15000,
+  DateIssued: '2024-07-20',
+  Status: 'In Review',
+},
+];
 
 // === CLIENTS (one per project) ===
-export const clients = [
+export const clients: Client[] = [
   {
     ClientID: 1,
     ClientName: 'Acme Property Developers',
@@ -945,4 +957,4 @@ export const clients = [
     Address: 'Palm Boulevard, Umhlanga Ridge, Durban, 4319',
     BillingAddress: 'PO Box 2015, Umhlanga Rocks, 4320',
   },
-] as const;
+];
