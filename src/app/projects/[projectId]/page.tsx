@@ -6,6 +6,7 @@ import AppCard from '@/components/AppCard';
 import GanttChart from '@/components/GanttChart';
 import Overview from '@/components/Overview';
 import Taskboard from '@/components/Taskboard';
+import TaskBoard from '@/components/TaskBoardd';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -128,15 +129,14 @@ const SingleProject = () => {
 
             {/* Conditional Rendering */}
             <div className='mt-2'>
-              {viewMode === 'gantt' ? <GanttChartT /> : <Taskboard />}
+              {viewMode === 'gantt' ? <GanttChartT /> : <TaskBoard />}
             </div>
           </TabsContent>
 
           {/* Other tabs */}
           <TabsContent value='timesheet'>
-            <p className='text-muted-foreground'>
               <EmployeeTimeSheet />
-            </p>
+
           </TabsContent>
           <TabsContent value='financials'>
             <p className='text-muted-foreground'>
