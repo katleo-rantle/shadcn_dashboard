@@ -36,18 +36,18 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  /** Optional meta object passed to table instance (used for actions like edit/delete) */
+  meta?: Record<string, any>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  meta, // ← Now accepted!
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
@@ -67,36 +67,34 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
     },
+    // Pass meta down so column cells can access onEdit/onDelete
+    meta,
   });
 
   return (
-    <div className='space-y-4'>
-      <div className='flex items-center justify-between py-4'>
-        <div className='flex flex-1 flex-col sm:flex-row space-y-2 sm:space-y-0 items-center justify-between space-x-2'>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between py-4">
+        <div className="flex flex-1 flex-col sm:flex-row space-y-2 sm:space-y-0 items-center justify-between space-x-2">
           <Input
-            placeholder='Filter project names...'
-            value={
-              (table.getColumn('ProjectName')?.getFilterValue() as string) ?? ''
-            }
+            placeholder="Filter project names..."
+            value={(table.getColumn('ProjectName')?.getFilterValue() as string) ?? ''}
             onChange={(event) =>
               table.getColumn('ProjectName')?.setFilterValue(event.target.value)
             }
-            className='max-w-sm'
+            className="max-w-sm"
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='outline' className='ml-auto sm:ml-0'>
+              <Button variant="outline" className="ml-auto sm:ml-0">
                 Status Filter
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='start' className='w-[180px]'>
+            <DropdownMenuContent align="start" className="w-[180px]">
               {['Active', 'Completed', 'In Progress'].map((status) => (
                 <DropdownMenuCheckboxItem
                   key={status}
-                  className='capitalize'
-                  checked={
-                    table.getColumn('Status')?.getFilterValue() === status
-                  }
+                  className="capitalize"
+                  checked={table.getColumn('Status')?.getFilterValue() === status}
                   onCheckedChange={(value) => {
                     if (value) {
                       table.getColumn('Status')?.setFilterValue(status);
@@ -110,55 +108,47 @@ export function DataTable<TData, TValue>({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <div className='text-muted-foreground flex-1 text-sm'>
+          <div className="text-muted-foreground flex-1 text-sm">
             {table.getFilteredSelectedRowModel().rows.length} of{' '}
             {table.getFilteredRowModel().rows.length} row(s) selected.
           </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant='outline' className='ml-auto'>
+            <Button variant="outline" className="ml-auto">
               Columns
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
+          <DropdownMenuContent align="end">
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className='capitalize'
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
+              .map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  className="capitalize"
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                >
+                  {column.id}
+                </DropdownMenuCheckboxItem>
+              ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className='rounded-md border'>
+
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -171,20 +161,14 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -192,18 +176,19 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className='flex items-center justify-end space-x-2 py-4'>
+
+      <div className="flex items-center justify-end space-x-2 py-4">
         <Button
-          variant='outline'
-          size='sm'
+          variant="outline"
+          size="sm"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
         >
           Previous
         </Button>
         <Button
-          variant='outline'
-          size='sm'
+          variant="outline"
+          size="sm"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
         >

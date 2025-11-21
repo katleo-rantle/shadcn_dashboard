@@ -95,14 +95,21 @@ export default function AppSidebar() {
           {/* Logo */}
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="hover:bg-transparent p-0">
-              <Link href="/" className="flex items-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 text-white font-black text-xl shadow-xl">
-                  RC
-                </div>
+              <Link href="/" className="flex items-center gap-3">
+                {/* Logo Icon – Always visible */}
+                <div className={`
+                    flex items-center justify-center rounded-xl 
+                    bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 
+                    text-white font-black text-xl shadow-xl transition-all duration-200
+                    ${open ? 'h-10 w-10' : 'h-9 w-9'}
+                  `}>
+                    RC
+                  </div>
+                                {/* Text – Only visible when sidebar is open */}
                 {open && (
-                  <div className="ml-3">
-                    <p className="font-black text-xl text-gray-900 leading-none">Rantle</p>
-                    <p className="text-xs font-medium text-gray-500">Construction</p>
+                  <div className="flex flex-col">
+                    <span className="font-black text-xl leading-none text-foreground">Rantle</span>
+                    <span className="text-xs font-medium text-muted-foreground">Construction</span>
                   </div>
                 )}
               </Link>
