@@ -55,19 +55,20 @@ export interface Job {
   ActualEndDate: string | null;
 }
 
-export interface Task {
+export type Task = {
   TaskID: number;
   JobID: number;
   TaskName: string;
-  TaskBudget: number;
-  TaskProgress: number;
-  Status: TaskStatus;
+  TaskBudget?: number;
+  Status: 'Completed' | 'In Progress' | 'Active' | 'Not Started';
   PlannedStartDate: string;
   PlannedEndDate: string;
   ActualStartDate: string | null;
   ActualEndDate: string | null;
+  TaskProgress?: number;
   DueDate?: string;
-}
+  QuotationRef?: string | null;  // ← Add this line (optional string for quotation number)
+};
 
 export interface ChangeOrder {
   ChangeOrderID: number;
@@ -84,8 +85,8 @@ export interface Client {
   ContactPerson: string;
   Email: string;
   Phone: string;
-  Address: string;
-  BillingAddress: string;
+  Address?: string;
+  BillingAddress?: string;
 }
 
 // --- Placeholder Definitions for Referenced Types ---

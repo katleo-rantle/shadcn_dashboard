@@ -1,9 +1,9 @@
-// src/components/JobTaskBoard.tsx (Final Version with Project Switch Fix)
+// src/components/JobTaskBoard.tsx (Final Version with Project Switch Fix and Quotation Feature)
 'use client';
 
-import React, { useMemo, useState } from 'react';
-
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, FileText } from 'lucide-react'; // Added FileText
+import { format } from 'date-fns'; // Added format
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox'; // Added Checkbox
 
 import {
   Table,
@@ -39,9 +40,10 @@ import {
 } from '@/components/ui/table';
 
 // NOTE: Assuming '@/lib/data' and '@/context/ProjectContext' exist in your environment
-import { jobs, tasks as rawTasks } from '@/lib/data'; 
+import { jobs, tasks as rawTasks, projects, clients } from '@/lib/data'; // Added projects, clients
 import { useProject } from '@/context/ProjectContext';
 import type { Job } from '@/lib/types'; 
+import QuotationPDF from '@/components/QuotationPDF'; // Added QuotationPDF
 
 import {
   flexRender,
@@ -67,6 +69,7 @@ export type Task = {
   ActualStartDate: string | null;
   ActualEndDate: string | null;
   DueDate?: string; 
+  QuotationRef?: string; // Added for quotation linking
 };
 
 export type JobWithTasks = Job & { 
@@ -78,7 +81,7 @@ export type JobWithTasks = Job & {
 const initialTasks = rawTasks as unknown as Task[];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Job Action Components (Dialogs)
+// Job Action Components (Dialogs) - (Copied from previous file)
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface JobDialogProps {
@@ -170,7 +173,7 @@ const JobDialog: React.FC<JobDialogProps> = ({
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Task Action Components (Dialogs)
+// Task Action Components (Dialogs) - (Copied from previous file)
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TaskDialogProps {
@@ -215,6 +218,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       PlannedEndDate: initialTask.PlannedEndDate || new Date().toISOString().split('T')[0],
       ActualStartDate: initialTask.ActualStartDate || null,
       ActualEndDate: initialTask.ActualEndDate || null,
+      QuotationRef: initialTask.QuotationRef || undefined, // Keep existing ref
     } as Task;
     onSave(newTask);
     onOpenChange(false);
@@ -284,7 +288,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sub-Component: Task Sub Table
+// Sub-Component: Task Sub Table - (Updated to display QuotationRef)
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TaskSubTableProps {
@@ -300,9 +304,34 @@ const TaskSubTable: React.FC<TaskSubTableProps> = ({
     handleOpenDialog, 
     handleDeleteTask 
 }) => {
+    // Modify column definitions to display QuotationRef
+    const columnsWithQuotationRef = [...taskListColumns];
+    const actionsIndex = columnsWithQuotationRef.findIndex(col => col.id === 'taskActions');
+
+    const quotationRefColumn: ColumnDef<Task, any> = {
+        id: 'quotationRef',
+        header: 'Quoted',
+        cell: (info: CellContext<Task, unknown>) => {
+            const task = info.row.original;
+            return task.QuotationRef ? (
+                <Badge variant="secondary">{task.QuotationRef}</Badge>
+            ) : (
+                <span className="text-muted-foreground">—</span>
+            );
+        },
+    };
+
+    // Insert QuotationRef column before Actions
+    if (actionsIndex !== -1) {
+        columnsWithQuotationRef.splice(actionsIndex, 0, quotationRefColumn);
+    } else {
+        columnsWithQuotationRef.push(quotationRefColumn);
+    }
+    
+    // Create the table instance
     const subTable = useReactTable({
         data: tasks,
-        columns: taskListColumns.map(col => {
+        columns: columnsWithQuotationRef.map(col => {
              if (col.id === 'taskActions' && (col as ColumnDef<Task, any>).cell) {
                 return {
                     ...col,
@@ -356,7 +385,7 @@ const TaskSubTable: React.FC<TaskSubTableProps> = ({
                 {subTable.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                         {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id}>
+                            <TableHead key={header.id} className={header.column.id === 'taskActions' ? 'text-right' : ''}>
                                 {header.isPlaceholder
                                     ? null
                                     : flexRender(header.column.columnDef.header, header.getContext())}
@@ -391,23 +420,32 @@ export default function JobTaskBoard() {
   const [projectJobs, setProjectJobs] = useState<Job[]>(initialJobs);
 
   // FIX: Synchronize local state when the project changes (initialJobs updates)
-  React.useEffect(() => {
-      // 1. Update projectJobs state with new jobs from the selected project
+  useEffect(() => { // Changed to useEffect
       setProjectJobs(initialJobs);
       
-      // 2. Automatically select the first job of the new project, if available
       if (initialJobs.length > 0) {
           setSelectedJobId(initialJobs[0].JobID);
       } else {
           setSelectedJobId(null);
       }
+      // Reset quotation selection when project changes
+      setShowQuotationModal(false);
+      setSelectedJobsForQuote([]);
+      setSelectedTasksForQuote(new Set());
       
-  }, [initialJobs]); // Dependency: Runs whenever the selected project's jobs change
+  }, [initialJobs]); 
 
   const [selectedJobId, setSelectedJobId] = useState<number | null>(
     projectJobs.length > 0 ? projectJobs[0].JobID : null
   );
   const [localTasks, setLocalTasks] = useState<Task[]>(initialTasks);
+
+  // --- Quotation State --- (Integrated)
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [selectedJobsForQuote, setSelectedJobsForQuote] = useState<number[]>([]);
+  const [selectedTasksForQuote, setSelectedTasksForQuote] = useState<Set<number>>(new Set());
+  const quotationNumber = `QUO-${format(new Date(), 'yyyy')}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`;
+
 
   // Dialog States
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -419,25 +457,26 @@ export default function JobTaskBoard() {
 
   // --- JOB CRUD Handlers ---
   const handleOpenJobDialog = (job: Partial<Job>) => {
-    setCurrentJob(job);
+    // Ensure ProjectID is set for a new job based on the current project context
+    setCurrentJob({ ...job, ProjectID: job.ProjectID || (initialJobs.length > 0 ? initialJobs[0].ProjectID : 1) });
     setIsJobDialogOpen(true);
   };
   
   const handleSaveJob = (job: Job) => {
-    if (projectJobs.find((j) => j.JobID === job.JobID)) {
-      setProjectJobs(
-        projectJobs.map((j) => (j.JobID === job.JobID ? job : j))
-      );
-    } else {
-      setProjectJobs([...projectJobs, job]);
-      setSelectedJobId(job.JobID);
+    setProjectJobs(prev => 
+        prev.some((j) => j.JobID === job.JobID)
+        ? prev.map((j) => (j.JobID === job.JobID ? job : j))
+        : [...prev, job]
+    );
+    if (!projectJobs.some((j) => j.JobID === job.JobID)) {
+        setSelectedJobId(job.JobID);
     }
     setIsJobDialogOpen(false); 
   };
   
   const handleDeleteJob = (jobID: number) => {
-    setProjectJobs(projectJobs.filter(j => j.JobID !== jobID));
-    setLocalTasks(localTasks.filter(t => t.JobID !== jobID));
+    setProjectJobs(prev => prev.filter(j => j.JobID !== jobID));
+    setLocalTasks(prev => prev.filter(t => t.JobID !== jobID));
     
     if (selectedJobId === jobID) {
       const nextJob = projectJobs.find(j => j.JobID !== jobID);
@@ -452,13 +491,11 @@ export default function JobTaskBoard() {
   };
 
   const handleSaveTask = (task: Task) => {
-    if (localTasks.find((t) => t.TaskID === task.TaskID)) {
-      setLocalTasks(
-        localTasks.map((t) => (t.TaskID === task.TaskID ? task : t))
-      );
-    } else {
-      setLocalTasks([...localTasks, task]);
-    }
+    setLocalTasks(prev => 
+        prev.some((t) => t.TaskID === task.TaskID)
+        ? prev.map((t) => (t.TaskID === task.TaskID ? task : t))
+        : [...prev, task]
+    );
     setIsTaskDialogOpen(false); 
   };
 
@@ -471,11 +508,9 @@ export default function JobTaskBoard() {
     return projectJobs.map((job) => {
         const tasks = localTasks.filter((t) => t.JobID === job.JobID);
         
-        // Calculate Job Progress (Average of all task progresses)
         const totalProgressWeight = tasks.reduce((sum, t) => sum + (t.TaskProgress ?? 0), 0);
         const jobProgress = tasks.length > 0 ? Math.round(totalProgressWeight / tasks.length) : 0;
 
-        // Calculate Actual Cost (Sum of Task Budget only for tasks where Progress is 100)
         const actualCost = tasks.reduce((sum, t) => {
             if (t.TaskProgress === 100) { 
                 return sum + (t.TaskBudget ?? 0);
@@ -495,7 +530,132 @@ export default function JobTaskBoard() {
   const selectedJob = jobsWithTasks.find(j => j.JobID === selectedJobId);
   
 // ─────────────────────────────────────────────────────────────────────────────
-// Column definitions (Task Table)
+// Quotation Handlers - (Integrated)
+// ─────────────────────────────────────────────────────────────────────────────
+
+  const handleCreateQuotation = async () => {
+    const items = selectedJobsForQuote.flatMap(jobId => {
+      const job = jobsWithTasks.find(j => j.JobID === jobId);
+      return job?.Tasks
+        .filter(t => selectedTasksForQuote.has(t.TaskID))
+        .map(t => ({
+          description: t.TaskName,
+          quantity: 1,
+          unit: 'each',
+          rate: t.TaskBudget || 0,
+          amount: t.TaskBudget || 0,
+        })) || [];
+    });
+
+    if (items.length === 0) {
+        alert("Please select at least one task to create a quotation.");
+        return;
+    }
+
+    const subtotal = items.reduce((sum, i) => sum + i.amount, 0);
+    const vat = subtotal * 0.15; // Assuming 15% VAT
+    const total = subtotal + vat;
+
+    const project = projects.find(p => p.ProjectID === projectJobs[0]?.ProjectID);
+    const client = clients.find(c => c.ClientID === project?.ClientID);
+
+    // Tag tasks with the new QuotationRef
+    selectedTasksForQuote.forEach(taskId => {
+      setLocalTasks(prev => prev.map(t =>
+        t.TaskID === taskId ? { ...t, QuotationRef: quotationNumber } : t
+      ));
+    });
+
+    // Generate PDF (Requires a mock/real QuotationPDF component)
+    // NOTE: If QuotationPDF is not available, this will throw an error.
+    try {
+        const blob = await (QuotationPDF as any).generate({
+            quotationNumber,
+            date: new Date(),
+            client,
+            project,
+            items,
+            subtotal,
+            vat,
+            total,
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${quotationNumber}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error("Failed to generate PDF. Is QuotationPDF component available?", e);
+        // Fallback for demonstration if PDF generation fails
+        alert(`Quotation ${quotationNumber} created successfully (PDF generation mock/failed). Total: R ${total.toLocaleString()}`);
+    }
+
+
+    setShowQuotationModal(false);
+    setSelectedJobsForQuote([]);
+    setSelectedTasksForQuote(new Set());
+  };
+
+  const toggleJob = (jobId: number) => {
+    setSelectedJobsForQuote(prev => {
+      if (prev.includes(jobId)) {
+        // Deselecting job also deselects its tasks
+        const job = jobsWithTasks.find(j => j.JobID === jobId);
+        if (job) {
+            setSelectedTasksForQuote(prevTasks => {
+                const next = new Set(prevTasks);
+                job.Tasks.forEach(t => next.delete(t.TaskID));
+                return next;
+            });
+        }
+        return prev.filter(id => id !== jobId);
+      } else {
+        return [...prev, jobId];
+      }
+    });
+  };
+
+  const toggleTask = (taskId: number, jobId: number) => {
+    setSelectedTasksForQuote(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+        // Automatically select the parent job if a task is selected
+        if (!selectedJobsForQuote.includes(jobId)) {
+            setSelectedJobsForQuote(prevJobs => [...prevJobs, jobId]);
+        }
+      }
+      return next;
+    });
+  };
+
+  const selectAllInJob = (jobId: number) => {
+    const job = jobsWithTasks.find(j => j.JobID === jobId);
+    if (!job) return;
+    
+    // Ensure job is selected first
+    if (!selectedJobsForQuote.includes(jobId)) {
+         setSelectedJobsForQuote(prevJobs => [...prevJobs, jobId]);
+    }
+    
+    setSelectedTasksForQuote(prevTasks => {
+        const next = new Set(prevTasks);
+        const allSelected = job.Tasks.every(t => prevTasks.has(t.TaskID));
+        
+        job.Tasks.forEach(t => 
+            allSelected ? next.delete(t.TaskID) : next.add(t.TaskID)
+        );
+        return next;
+    });
+  };
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Column definitions (Task Table) - (Copied from previous file)
 // ─────────────────────────────────────────────────────────────────────────────
   
   const taskColumnHelper = createColumnHelper<Task>();
@@ -586,6 +746,78 @@ export default function JobTaskBoard() {
           onOpenChange={setIsTaskDialogOpen}
         />
       )}
+      
+      {/* Quotation Modal */} 
+      <Dialog open={showQuotationModal} onOpenChange={setShowQuotationModal}>
+        <DialogContent className="max-w-4xl max-h-screen overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Quotation</DialogTitle>
+            <DialogDescription>
+                Select the jobs and tasks to include in the quotation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="bg-primary/5 rounded-lg p-4">
+              <p className="font-semibold text-lg">Quotation #: <span className="text-primary">{quotationNumber}</span></p>
+              <p className="text-sm text-muted-foreground">Date: {format(new Date(), 'dd MMMM yyyy')}</p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">Select Jobs & Tasks</h3>
+              <div className="space-y-4">
+                {jobsWithTasks.map(job => (
+                  <div key={job.JobID} className="border rounded-lg p-4 bg-card">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Checkbox
+                        checked={selectedJobsForQuote.includes(job.JobID)}
+                        onCheckedChange={() => toggleJob(job.JobID)}
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold">{job.JobName}</p>
+                        <p className="text-sm text-muted-foreground">{job.Tasks.length} tasks • {formatCurrency(job.JobBudget)}</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => selectAllInJob(job.JobID)}>
+                        {job.Tasks.every(t => selectedTasksForQuote.has(t.TaskID)) ? 'Deselect All' : 'Select All'}
+                      </Button>
+                    </div>
+
+                    {selectedJobsForQuote.includes(job.JobID) && (
+                      <div className="ml-8 space-y-2 border-l-4 border-primary/20 pl-4">
+                        {job.Tasks.map(task => (
+                          <div key={task.TaskID} className="flex items-center gap-3">
+                            <Checkbox
+                              checked={selectedTasksForQuote.has(task.TaskID)}
+                              onCheckedChange={() => toggleTask(task.TaskID, job.JobID)}
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm">{task.TaskName}</p>
+                              <p className="text-xs text-muted-foreground">{formatCurrency(task.TaskBudget || 0)}</p>
+                            </div>
+                            {task.QuotationRef && <Badge variant="secondary" className="text-xs">In {task.QuotationRef}</Badge>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-muted rounded-lg p-4">
+              <p><strong>{selectedTasksForQuote.size}</strong> tasks selected</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowQuotationModal(false)}>Cancel</Button>
+            <Button onClick={handleCreateQuotation} disabled={selectedTasksForQuote.size === 0}>
+              <FileText className="h-4 w-4 mr-2" />
+              Generate PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Left: Job Selector */}
       <div className='w-80 border-r bg-muted/40 p-6 overflow-y-auto'>
@@ -648,6 +880,12 @@ export default function JobTaskBoard() {
                         </p>
                     </div>
                     <div className='flex gap-2'>
+                        {/* Create Quotation Button (Integrated) */}
+                        <Button onClick={() => setShowQuotationModal(true)} title='Create Quotation'>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Create Quotation
+                        </Button>
+                        
                         {/* Edit Job Button */}
                         <Button
                             variant='outline'
