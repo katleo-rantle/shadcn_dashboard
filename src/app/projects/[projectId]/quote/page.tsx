@@ -23,7 +23,7 @@ const VAT_RATE = 15;
 
 const QuotationTemplatePage = () => {
   const router = useRouter();
-  const { id } = useParams() as { id: string };
+  const { projectId: id } = useParams() as { projectId: string };
   const searchParams = useSearchParams();
 
   const projectId = Number(id);
@@ -36,8 +36,10 @@ const QuotationTemplatePage = () => {
   // Find real project & client
   const project = projects.find(p => p.ProjectID === projectId);
   const client = project ? clients.find(c => c.ClientID === project.ClientID) : null;
-
+  
+  
   if (!project || !client) {
+    console.log("params:", useParams());
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
