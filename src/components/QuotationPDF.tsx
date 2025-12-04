@@ -9,7 +9,6 @@ import {
   View,
   StyleSheet,
   Font,
-  Image,
 } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
@@ -44,6 +43,7 @@ Font.register({
   src: 'https://cdn.jsdelivr.net/npm/@react-pdf/renderer@3.1.14/fonts/Helvetica-Bold.ttf',
 });
 
+// --- STYLES (No structural changes to column widths) ---
 const styles = StyleSheet.create({
   page: {
     paddingTop: 80,
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderBottomWidth: 2,
-    borderBottomColor: '#1e40af',
+    borderBottomColor: '#1d4ed8', // blue-700
     paddingBottom: 12,
   },
   companyInfo: {
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   companyName: {
     fontSize: 18,
     fontFamily: 'Helvetica-Bold',
-    color: '#1e40af',
+    color: '#1d4ed8', // blue-700
     marginBottom: 6,
   },
   companyDetails: {
@@ -82,9 +82,9 @@ const styles = StyleSheet.create({
     fontSize: 9,
     lineHeight: 1.5,
     marginTop: 8,
-    padding: 8,
-    backgroundColor: '#f0f9ff',
-    borderRadius: 4,
+    padding: 6,
+    backgroundColor: '#eff6ff', // blue-50
+    borderRadius: 2,
   },
   docInfo: {
     textAlign: 'right',
@@ -92,20 +92,20 @@ const styles = StyleSheet.create({
   docTitle: {
     fontSize: 28,
     fontFamily: 'Helvetica-Bold',
-    color: '#1e40af',
+    color: '#1d4ed8', // blue-700
     marginBottom: 8,
   },
   docMeta: {
     fontSize: 9,
     lineHeight: 1.7,
   },
-  metaLabel: { color: '#6b7280', width: 90 },
+  metaLabel: { color: '#6b7280', width: 90, textAlign: 'left' },
   metaValue: { fontFamily: 'Helvetica-Bold' },
 
   billToProject: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f9fafb', // gray-50
     padding: 16,
     borderRadius: 8,
     marginTop: 20,
@@ -121,34 +121,35 @@ const styles = StyleSheet.create({
   },
   clientName: { fontSize: 13, fontFamily: 'Helvetica-Bold' },
 
-  categoryHeader: {
-    backgroundColor: '#f1f5f9',
-    padding: 10,
-    marginVertical: 12,
-    borderRadius: 6,
+  categoryRow: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9', // slate-100
+    paddingVertical: 6,
     borderLeftWidth: 4,
-    borderLeftColor: '#1e40af',
+    borderLeftColor: '#1d4ed8', // blue-700
+    marginTop: 10,
   },
   categoryText: {
     fontSize: 11,
     fontFamily: 'Helvetica-Bold',
-    color: '#1e40af',
+    color: '#1d4ed8',
     textTransform: 'uppercase',
+    paddingLeft: 12,
   },
 
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#1e40af',
+    backgroundColor: '#1d4ed8', // blue-700
     color: 'white',
     fontFamily: 'Helvetica-Bold',
-    paddingVertical: 10,
+    paddingVertical: 8,
     fontSize: 10,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    paddingVertical: 10,
+    borderBottomColor: '#e5e7eb', // gray-200
+    paddingVertical: 8,
   },
   colNo: { width: '8%', paddingLeft: 8 },
   colDesc: { width: '52%', paddingLeft: 8 },
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
     width: '45%',
     borderWidth: 1,
-    borderColor: '#1e40af',
+    borderColor: '#1d4ed8',
     borderRadius: 6,
     overflow: 'hidden',
   },
@@ -182,7 +183,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#1e40af',
+    backgroundColor: '#1d4ed8',
     color: 'white',
     fontSize: 14,
     fontFamily: 'Helvetica-Bold',
@@ -203,11 +204,11 @@ const styles = StyleSheet.create({
 });
 
 const Header = ({ data }: { data: DocumentData }) => {
-const formatDate = (dateString?: string): string => {
-  if (!dateString?.trim()) return '—';
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? 'Invalid Date' : format(date, 'dd MMMM yyyy');
-};
+  const formatDate = (dateString?: string): string => {
+    if (!dateString?.trim()) return '—';
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? 'Invalid Date' : format(date, 'dd MMMM yyyy');
+  };
 
   return (
     <View style={styles.header} fixed>
@@ -262,6 +263,13 @@ const Footer = ({ data, pageNumber, totalPages }: { data: DocumentData; pageNumb
   return (
     <View style={styles.footer} fixed>
       {pageNumber === totalPages && (
+        <View style={styles.notes}>
+          <Text style={{ fontFamily: 'Helvetica-Bold', marginBottom: 6, fontSize: 11 }}>Terms & Conditions</Text>
+          <Text>{data.notes}</Text>
+        </View>
+      )}
+
+      {pageNumber === totalPages && (
         <View style={styles.totalsBox}>
           <View style={styles.totalRow}>
             <Text>Subtotal</Text>
@@ -302,79 +310,116 @@ const DocumentPDF: React.FC<{ data: DocumentData }> = ({ data }) => {
   const formatCurrency = (amount: number) =>
     `R ${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`;
 
+  const allDocumentEntries = Object.entries(data.groupedItems).flatMap(([category, items]) => {
+    const header = { type: 'category' as const, category };
+    
+    const categoryItems = items.map((item, idx) => ({ 
+        ...item, 
+        type: 'item' as const, 
+        itemNumber: idx + 1 
+    }));
+    
+    return [header, ...categoryItems];
+  });
+  
+  const totalPages = 1;
+
   return (
     <Document>
-      {Object.keys(data.groupedItems).length > 0 ? (
-        Object.entries(data.groupedItems).map(([category, items], catIdx, arr) => (
-          <Page key={category} size="A4" style={styles.page} wrap>
-            <Header data={data} />
+      <Page size="A4" style={styles.page} wrap>
+        <Header data={data} />
 
-            {/* Show Bill To & Project only on first page */}
-            {catIdx === 0 && (
-              <View>
-                <View style={styles.billToProject}>
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Bill To</Text>
-                    <Text style={styles.clientName}>{data.client.ClientName}</Text>
-                    <Text style={{ fontSize: 10, color: '#4b5563' }}>
-                      {data.client.Address || 'Address not provided'}{'\n'}
-                      {data.client.Email}
-                    </Text>
-                  </View>
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Project</Text>
-                    <Text style={styles.clientName}>{data.project.ProjectName}</Text>
-                    <Text style={{ fontSize: 10, color: '#4b5563' }}>
-                      Project ID: {data.project.ProjectID}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* Category Items */}
-            <View wrap={false}>
-              <View style={styles.categoryHeader}>
-                <Text style={styles.categoryText}>{category}</Text>
-              </View>
-              <View style={styles.tableHeader}>
-                <Text style={styles.colNo}>#</Text>
-                <Text style={styles.colDesc}>DESCRIPTION</Text>
-                <Text style={styles.colQty}>QTY</Text>
-                <Text style={styles.colPrice}>RATE</Text>
-                <Text style={styles.colAmount}>AMOUNT</Text>
-              </View>
-              {items.map((item, idx) => (
-                <View key={item.id} style={styles.tableRow}>
-                  <Text style={styles.colNo}>{idx + 1}</Text>
-                  <Text style={styles.colDesc}>{item.description}</Text>
-                  <Text style={styles.colQty}>{item.quantity}</Text>
-                  <Text style={styles.colPrice}>{formatCurrency(item.price)}</Text>
-                  <Text style={styles.colAmount}>{formatCurrency(item.price)}</Text>
-                </View>
-              ))}
+        {/* Bill To & Project/Pay To Section */}
+        <View>
+          <View style={styles.billToProject}>
+            {/* Bill To Section (Client) - Always rendered */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Bill To</Text>
+              <Text style={styles.clientName}>{data.client.ClientName}</Text>
+              <Text style={{ fontSize: 10, color: '#4b5563' }}>
+                {data.client.Address || 'Address not provided'}{'\n'}
+                {data.client.Email}
+              </Text>
             </View>
-
-            {/* Notes only on last page */}
-            {catIdx === arr.length - 1 && (
-              <View style={styles.notes}>
-                <Text style={{ fontFamily: 'Helvetica-Bold', marginBottom: 6 }}>Terms & Conditions</Text>
-                <Text>{data.notes}</Text>
+            
+            {/* Conditional Section (Project vs. Pay To) */}
+            {data.type === 'quotation' ? (
+              // --- QUOTATION: Show Project Details ---
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Project</Text>
+                <Text style={styles.clientName}>{data.project.ProjectName}</Text>
+                <Text style={{ fontSize: 10, color: '#4b5563' }}>
+                  Project ID: {data.project.ProjectID}
+                </Text>
+              </View>
+            ) : (
+              // --- INVOICE: Show Pay To (Bank) Details ---
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>PAY TO</Text>
+                <Text style={styles.clientName}>Borcele Bank</Text>
+                <Text style={{ fontSize: 10, color: '#4b5563', lineHeight: 1.6 }}>
+                  Account Name: **Adeline Palmerston**
+                </Text>
+                <Text style={{ fontSize: 10, color: '#4b5563', lineHeight: 1.6 }}>
+                  Account No.: **0123 4567 8901**
+                </Text>
               </View>
             )}
+          </View>
+        </View>
 
-            <Footer data={data} pageNumber={catIdx + 1} totalPages={arr.length} />
-          </Page>
-        ))
-      ) : (
-        <Page style={styles.page}>
-          <Header data={data} />
-          <Text style={{ marginTop: 100, textAlign: 'center', color: '#9ca3af' }}>
-            No items to display
-          </Text>
-          <Footer data={data} pageNumber={1} totalPages={1} />
-        </Page>
-      )}
+        {/* Table Container */}
+        <View>
+          <View style={styles.tableHeader}>
+            <Text style={styles.colNo}>#</Text>
+            <Text style={styles.colDesc}>DESCRIPTION</Text>
+            <Text style={styles.colQty}>QTY</Text>
+            <Text style={styles.colPrice}>RATE</Text>
+            <Text style={styles.colAmount}>AMOUNT</Text>
+          </View>
+
+          {/* Item rendering loop */}
+          {allDocumentEntries.map((entry, index) => {
+            if (entry.type === 'category') {
+              // Category Header Row
+              return (
+                <View key={`cat-${entry.category}-${index}`} style={styles.categoryRow} wrap={false}>
+                  <Text style={styles.categoryText}>{entry.category}</Text>
+                </View>
+              );
+            }
+
+            // Item Row
+            const item = entry;
+            // Check if quantity is 1
+            const isSingleItem = item.quantity === 1;
+
+            return (
+              <View key={item.id} style={styles.tableRow} wrap={false}>
+                <Text style={styles.colNo}>{item.itemNumber}</Text>
+                <Text style={styles.colDesc}>{item.description}</Text>
+                
+                {/* Conditional Quantity Display */}
+                <Text style={styles.colQty}>
+                  {isSingleItem ? '' : item.quantity}
+                </Text>
+
+                {/* Conditional Rate Display */}
+                <Text style={styles.colPrice}>
+                  {isSingleItem ? '' : formatCurrency(item.price)}
+                </Text>
+                
+                {/* Final Amount (always shown) */}
+                <Text style={styles.colAmount}>
+                  {formatCurrency(item.price * item.quantity)}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <Footer data={data} pageNumber={1} totalPages={totalPages} />
+      </Page>
     </Document>
   );
 };

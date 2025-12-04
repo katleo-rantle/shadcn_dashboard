@@ -10,7 +10,7 @@ import QuotationPDF from '@/components/QuotationPDF';
 import PDFButton from "@/components/PDFButton";
 
 import { Project, Client } from '@/lib/types';
-import { tasks as rawTasks, projects, clients } from '@/lib/data';
+import { tasks as rawTasks, projects, clients, jobs as rawJobs } from '@/lib/data';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // Define Types
 type Task = (typeof rawTasks)[number] & { QuotationRef?: string | null };
 const tasks: Task[] = rawTasks as Task[];
+const jobs = rawJobs; // use rawJobs to read JobName when grouping
 
 const VAT_RATE = 15;
 
@@ -81,21 +82,31 @@ const QuotationTemplatePage = () => {
   }, [requestedTaskIDs]);
 
   const [items, setItems] = useState<QuoteItem[]>(() =>
-    availableTasks.map(t => ({
-      id: t.TaskID,
-      taskId: t.TaskID,
-      description: t.TaskName,
-      quantity: 1,
-      price: t.TaskBudget || 0,
-      category: 'General Works',
-    }))
+    availableTasks.map(t => {
+      const job = jobs.find(j => j.JobID === t.JobID);
+      return {
+        id: t.TaskID,
+        taskId: t.TaskID,
+        description: t.TaskName,
+        quantity: 1,
+        price: t.TaskBudget || 0,
+        category: job?.JobName || 'General Works',
+      };
+    })
   );
 
   const [notes, setNotes] = useState(
     'Payment terms: 50% deposit required to commence work.\nBalance due on completion.\nValid for 30 days.'
   );
 
-  const [categories, setCategories] = useState<string[]>(['General Works', 'Finishes', 'Electrical', 'Plumbing']);
+  const [categories, setCategories] = useState<string[]>([
+    'General Works',
+    'Finishes',
+    'Electrical',
+    'Plumbing',
+    // include job names so user can select/group by job
+    ...jobs.map(j => j.JobName),
+  ]);
   const [newCategory, setNewCategory] = useState('');
 
   const lockTasksToQuote = () => {
