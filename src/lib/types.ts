@@ -68,6 +68,8 @@ export type Task = {
   TaskProgress?: number;
   DueDate?: string;
   QuotationRef?: string | null;  // ← Add this line (optional string for quotation number)
+  category?: string;
+  InvoiceRefs?: string [];
 };
 
 export interface ChangeOrder {
@@ -113,3 +115,19 @@ export interface TaskActual {
   Cost: number;
   Notes: string;
 }
+
+export type Invoice = {
+  InvoiceID: string; // e.g. "INV-2025-0001"
+  QuotationRef: string;
+  ProjectID: number;
+  TaskIDs: number[];
+  Amount: number;
+  Status: 'Paid' | 'Partial' | 'Outstanding';
+  CreatedAt: string;
+};
+
+export type JobWithTasks = Job & {
+  Tasks: Task[];
+  JobProgress: number;
+  ActualCost: number;
+};

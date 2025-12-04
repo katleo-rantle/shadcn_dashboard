@@ -2,10 +2,13 @@
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Trash2, Download, ArrowLeft, Lock, AlertTriangle, FolderPlus } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Lock, AlertTriangle, FolderPlus } from 'lucide-react';
 import { format } from 'date-fns';
 
+// Import the Component itself (do not render it here)
 import QuotationPDF from '@/components/QuotationPDF';
+import PDFButton from "@/components/PDFButton";
+
 import { Project, Client } from '@/lib/types';
 import { tasks as rawTasks, projects, clients } from '@/lib/data';
 
@@ -15,10 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 
-import PDFButton from "@/components/PDFButton";
-
+// Define Types
 type Task = (typeof rawTasks)[number] & { QuotationRef?: string | null };
 const tasks: Task[] = rawTasks as Task[];
 
@@ -31,6 +32,7 @@ interface QuoteItem {
   quantity: number;
   price: number;
   category?: string;
+  displayNumber?: number; // Added optional for mapping later
 }
 
 const QuotationTemplatePage = () => {
@@ -85,7 +87,7 @@ const QuotationTemplatePage = () => {
       description: t.TaskName,
       quantity: 1,
       price: t.TaskBudget || 0,
-      category: 'General Works', // default
+      category: 'General Works',
     }))
   );
 
@@ -139,7 +141,6 @@ const QuotationTemplatePage = () => {
     }
   };
 
-  // Group items by category for numbering & display
   const groupedItems = useMemo(() => {
     const groups: Record<string, QuoteItem[]> = {};
     items.forEach(item => {
@@ -150,7 +151,6 @@ const QuotationTemplatePage = () => {
     return groups;
   }, [items]);
 
-  // Generate numbered items with category headers
   const numberedItems = Object.entries(groupedItems).flatMap(([category, catItems]) => {
     const header = { type: 'category' as const, name: category };
     const numbered = catItems.map((item, idx) => ({
@@ -160,9 +160,11 @@ const QuotationTemplatePage = () => {
     return [header, ...numbered];
   });
 
+  // --- FIXED: Mapped property names to match DocumentData interface ---
   const pdfData = {
-    quotationNumber,
-    quotationDate,
+    type: 'quotation' as const,                // Added required field
+    documentNumber: quotationNumber,   // Mapped from quotationNumber
+    documentDate: quotationDate,       // Mapped from quotationDate
     validUntil,
     groupedItems,
     notes,
@@ -184,46 +186,38 @@ const QuotationTemplatePage = () => {
       </div>
     );
   }
-  const pdfDocument = useMemo(
-    //() => <QuotationPDF {...pdfData} />,
-    () => <QuotationPDF data={pdfData} />,
-    [quotationNumber, quotationDate, validUntil, items, notes]
-  );
+
+  // NOTE: pdfDocument useMemo has been REMOVED to prevent the Eo crash.
+  // The logic is moved inside PDFButton props.
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-5xl px-4">
 
-
-        {/* Alerts: Some tasks already quoted */}
+        {/* Alerts */}
         {alreadyQuotedTasks.length > 0 && (
           <Alert className="mb-6 border-yellow-400 bg-yellow-50">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Tasks Already Quoted</AlertTitle>
             <AlertDescription>
-              The following tasks are already included in another quotation and were skipped:
+              The following tasks are already included in another quotation:
               <ul className="mt-2 list-disc pl-5 text-sm">
                 {alreadyQuotedTasks.map(t => (
                   <li key={t.TaskID}>
-                    <strong>{t.TaskName}</strong> → Quoted in{' '}
-                    <Badge variant="destructive">{t.QuotationRef}</Badge>
+                    <strong>{t.TaskName}</strong> → {t.QuotationRef}
                   </li>
                 ))}
               </ul>
             </AlertDescription>
           </Alert>
         )}
-        {/* Info: Tasks will be locked */}
+
         {availableTasks.length > 0 && (
           <Alert className="mb-6 border-green-400 bg-green-50">
             <Lock className="h-4 w-4" />
             <AlertTitle>Tasks Will Be Locked</AlertTitle>
             <AlertDescription>
-              <span className="font-medium">
-                {availableTasks.length} task{availableTasks.length !== 1 ? 's' : ''}
-              </span>{' '}
-              will be permanently assigned to{' '}
-              <span className="font-bold text-green-700">{quotationNumber}</span> when you download the PDF.
+              {availableTasks.length} tasks will be locked to <span className="font-bold">{quotationNumber}</span> upon download.
             </AlertDescription>
           </Alert>
         )}
@@ -252,15 +246,19 @@ const QuotationTemplatePage = () => {
               <Plus className="mr-2 h-4 w-4" /> Add Item
             </Button>
 
+            {/* --- FIXED: Updated PDF Button Usage --- */}
             <PDFButton
-              pdfDocument={pdfDocument}
+              // Pass the Component Reference (Import), NOT <QuotationPDF />
+              documentComponent={QuotationPDF}
+              // Pass the data object prop
+              documentProps={{ data: pdfData }}
               fileName={`${quotationNumber}.pdf`}
               onBeforeDownload={lockTasksToQuote}
             />
           </div>
         </div>
 
-        {/* A4 Preview */}
+        {/* HTML Preview (Matches PDF Visuals) */}
         <div className="overflow-hidden rounded-lg bg-white shadow-2xl" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}>
           <div className="p-12 font-sans">
 
@@ -272,8 +270,6 @@ const QuotationTemplatePage = () => {
                   <p>123 Construction Avenue, Sandton</p>
                   <p>Johannesburg, Gauteng, 2196</p>
                   <p>VAT Reg: 4123456789</p>
-                  <p>Tel: 011 234 5678</p>
-                  <p>quotes@buildpro.co.za</p>
                 </div>
               </div>
               <div className="text-right">
@@ -281,7 +277,6 @@ const QuotationTemplatePage = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-end gap-4"><span className="font-medium">Quote #:</span> <span className="font-bold">{quotationNumber}</span></div>
                   <div className="flex justify-end gap-4"><span className="font-medium">Date:</span> <span>{format(new Date(quotationDate), 'dd MMMM yyyy')}</span></div>
-                  <div className="flex justify-end gap-4"><span className="font-medium">Valid Until:</span> <span>{format(new Date(validUntil), 'dd MMMM yyyy')}</span></div>
                 </div>
               </div>
             </div>
@@ -292,8 +287,6 @@ const QuotationTemplatePage = () => {
                 <h3 className="mb-4 text-lg font-bold uppercase tracking-wider text-gray-700">Bill To</h3>
                 <p className="text-xl font-bold">{client.ClientName}</p>
                 <p className="text-sm text-gray-600">{(client as any).Address || 'Address not provided'}</p>
-                <p className="text-sm text-gray-600">Email: {(client as any).Email || 'N/A'}</p>
-                <p className="text-sm text-gray-600">Contact: {client.ContactPerson || 'N/A'}</p>
               </div>
               <div className="text-right">
                 <h3 className="mb-4 text-lg font-bold uppercase tracking-wider text-gray-700">Project</h3>
@@ -316,9 +309,8 @@ const QuotationTemplatePage = () => {
                 </tr>
               </thead>
               <tbody>
-                {numberedItems.map((entry, idx) => {
+                {numberedItems.map((entry) => {
                   if ('type' in entry) {
-                    // Category Header
                     return (
                       <tr key={`cat-${entry.name}`} className="border-b bg-gray-50">
                         <td colSpan={7} className="py-2 pl-4 text-sm font-medium text-gray-600 italic">
@@ -411,9 +403,6 @@ const QuotationTemplatePage = () => {
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-32 text-sm" />
             </div>
 
-            <div className="mt-16 text-center text-sm text-gray-600">
-              <p>Thank you for your business!</p>
-            </div>
           </div>
         </div>
       </div>

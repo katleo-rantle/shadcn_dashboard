@@ -305,7 +305,7 @@ export const tasks: Task[] = [
         ActualStartDate: '2024-04-01',
         ActualEndDate: '2024-04-02',
         TaskProgress: 100,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
     {
         TaskID: 1002,
@@ -318,7 +318,7 @@ export const tasks: Task[] = [
         ActualStartDate: '2024-04-04',
         ActualEndDate: null,
         TaskProgress: 70,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
     {
         TaskID: 1003,
@@ -331,7 +331,7 @@ export const tasks: Task[] = [
         ActualStartDate: null,
         ActualEndDate: null,
         TaskProgress: 0,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
 
     // Job 102: Foundation Work (Project 1)
@@ -346,7 +346,7 @@ export const tasks: Task[] = [
         ActualStartDate: '2024-04-11',
         ActualEndDate: null,
         TaskProgress: 20,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
     {
         TaskID: 1005,
@@ -359,7 +359,7 @@ export const tasks: Task[] = [
         ActualStartDate: null,
         ActualEndDate: null,
         TaskProgress: 0,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
     {
         TaskID: 1006,
@@ -372,7 +372,7 @@ export const tasks: Task[] = [
         ActualStartDate: null,
         ActualEndDate: null,
         TaskProgress: 0,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
 
     // Job 201: Demolition & Prep (Project 2)
@@ -387,7 +387,7 @@ export const tasks: Task[] = [
         ActualStartDate: '2024-02-01',
         ActualEndDate: '2024-02-01',
         TaskProgress: 100,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
     {
         TaskID: 2002,
@@ -400,7 +400,7 @@ export const tasks: Task[] = [
         ActualStartDate: '2024-02-02',
         ActualEndDate: '2024-02-04',
         TaskProgress: 100,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
     {
         TaskID: 2003,
@@ -413,7 +413,7 @@ export const tasks: Task[] = [
         ActualStartDate: '2024-02-04',
         ActualEndDate: '2024-02-04',
         TaskProgress: 100,
-        QuotationRef: null,  // ← Add this
+        QuotationRef: 'QUO-2025-9816',  // ← Add this
     },
     
     // Job 202: Cabinet Installation (Project 2)

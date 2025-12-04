@@ -1,4 +1,6 @@
-// src/components/QuotationPDFDocument.tsx
+// components/DocumentPDF.tsx
+'use client';
+
 import React from 'react';
 import {
   Document,
@@ -6,73 +8,99 @@ import {
   Text,
   View,
   StyleSheet,
+  Font,
+  Image,
 } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
 import type { Client, Project } from '@/lib/types';
 
-export interface QuotationItem {
+export interface LineItem {
   id: number;
-  taskId?: number;
   description: string;
   quantity: number;
   price: number;
-  category?: string;
 }
 
-export interface QuotationData {
-  quotationNumber: string;
-  quotationDate: string;
-  validUntil: string;
-  groupedItems: Record<string, QuotationItem[]>;
+export interface DocumentData {
+  type: 'quotation' | 'invoice';
+  documentNumber: string;
+  documentDate: string;
+  validUntil?: string;
+  referenceQuotation?: string;
+  groupedItems: Record<string, LineItem[]>;
   notes: string;
   client: Client;
   project: Project;
   subtotal: number;
   vat: number;
   total: number;
+  amountInvoiced?: number;
+  remainingBalance?: number;
 }
 
-const VAT_RATE = 15;
+Font.register({
+  family: 'Helvetica-Bold',
+  src: 'https://cdn.jsdelivr.net/npm/@react-pdf/renderer@3.1.14/fonts/Helvetica-Bold.ttf',
+});
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    paddingTop: 80,
+    paddingBottom: 100,
+    paddingHorizontal: 40,
+    fontFamily: 'Helvetica',
     fontSize: 10,
     color: '#1f2937',
-    backgroundColor: '#ffffff',
   },
   header: {
+    position: 'absolute',
+    top: 20,
+    left: 40,
+    right: 40,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
-    paddingBottom: 15,
     borderBottomWidth: 2,
-    borderBottomColor: '#2563eb',
+    borderBottomColor: '#1e40af',
+    paddingBottom: 12,
   },
-  companyInfo: { flexDirection: 'column' },
+  companyInfo: {
+    width: '60%',
+  },
   companyName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e40af',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   companyDetails: {
     fontSize: 9,
-    lineHeight: 1.5,
+    lineHeight: 1.6,
     color: '#4b5563',
   },
-  quoteHeader: { textAlign: 'right' },
-  quoteTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e40af',
-    marginBottom: 10,
+  bankInfo: {
+    fontSize: 9,
+    lineHeight: 1.5,
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: '#f0f9ff',
+    borderRadius: 4,
   },
-  quoteMeta: { fontSize: 10, lineHeight: 1.6 },
-  metaRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 2 },
-  metaLabel: { width: 80, color: '#6b7280' },
-  metaValue: { width: 120, textAlign: 'right', fontWeight: 'bold' },
+  docInfo: {
+    textAlign: 'right',
+  },
+  docTitle: {
+    fontSize: 28,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e40af',
+    marginBottom: 8,
+  },
+  docMeta: {
+    fontSize: 9,
+    lineHeight: 1.7,
+  },
+  metaLabel: { color: '#6b7280', width: 90 },
+  metaValue: { fontFamily: 'Helvetica-Bold' },
 
   billToProject: {
     flexDirection: 'row',
@@ -80,25 +108,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     padding: 16,
     borderRadius: 8,
-    marginBottom: 24,
+    marginTop: 20,
+    marginBottom: 30,
   },
   section: { width: '48%' },
   sectionTitle: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#374151',
     marginBottom: 6,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
-  clientName: { fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
-  clientDetail: { fontSize: 10, color: '#4b5563', lineHeight: 1.5 },
+  clientName: { fontSize: 13, fontFamily: 'Helvetica-Bold' },
 
-  // Category Header — subtle, professional
   categoryHeader: {
     backgroundColor: '#f1f5f9',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    padding: 10,
     marginVertical: 12,
     borderRadius: 6,
     borderLeftWidth: 4,
@@ -106,18 +131,16 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#1e40af',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
   },
 
-  table: { marginBottom: 24 },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#1e40af',
     color: 'white',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     paddingVertical: 10,
     fontSize: 10,
   },
@@ -126,177 +149,234 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
     paddingVertical: 10,
-    alignItems: 'center',
   },
   colNo: { width: '8%', paddingLeft: 8 },
   colDesc: { width: '52%', paddingLeft: 8 },
-  colQty: { width: '15%', textAlign: 'right', paddingRight: 8 },
-  colPrice: { width: '15%', textAlign: 'right', paddingRight: 8 },
-  colAmount: { width: '20%', textAlign: 'right', paddingRight: 8 },
-
-  totals: { marginLeft: 'auto', width: '45%', marginTop: 20 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, fontSize: 11 },
-  totalLabel: { color: '#4b5563' },
-  totalValue: { fontWeight: 'bold' },
-  grandTotalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingTop: 12,
-    borderTopWidth: 3,
-    borderTopColor: '#1e40af',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-
-  notes: { marginTop: 32, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
-  notesTitle: { fontSize: 11, fontWeight: 'bold', marginBottom: 8, color: '#374151' },
-  notesText: { fontSize: 9, lineHeight: 1.6, color: '#4b5563' },
+  colQty: { width: '12%', textAlign: 'right' },
+  colPrice: { width: '14%', textAlign: 'right' },
+  colAmount: { width: '14%', textAlign: 'right', paddingRight: 8, fontFamily: 'Helvetica-Bold' },
 
   footer: {
     position: 'absolute',
-    bottom: 30,
-    left: 0,
-    right: 0,
-    textAlign: 'center',
+    bottom: 40,
+    left: 40,
+    right: 40,
+  },
+  totalsBox: {
+    marginLeft: 'auto',
+    width: '45%',
+    borderWidth: 1,
+    borderColor: '#1e40af',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#f8fafc',
+  },
+  grandTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#1e40af',
+    color: 'white',
+    fontSize: 14,
+    fontFamily: 'Helvetica-Bold',
+  },
+  notes: {
+    marginTop: 30,
+    fontSize: 9,
+    lineHeight: 1.6,
+    color: '#4b5563',
+  },
+  pageNumber: {
+    position: 'absolute',
+    bottom: 20,
+    right: 40,
     fontSize: 8,
     color: '#9ca3af',
   },
 });
 
-const QuotationPDF: React.FC<{ data: QuotationData }> = ({ data }) => {
-  const {
-    quotationNumber,
-    quotationDate,
-    validUntil,
-    groupedItems,
-    notes,
-    client,
-    project,
-    subtotal,
-    vat,
-    total,
-  } = data;
+const Header = ({ data }: { data: DocumentData }) => {
+const formatDate = (dateString?: string): string => {
+  if (!dateString?.trim()) return '—';
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? 'Invalid Date' : format(date, 'dd MMMM yyyy');
+};
 
+  return (
+    <View style={styles.header} fixed>
+      <View style={styles.companyInfo}>
+        <Text style={styles.companyName}>BuildPro Construction (Pty) Ltd</Text>
+        <Text style={styles.companyDetails}>
+          123 Construction Avenue, Sandton{'\n'}
+          Johannesburg, 2196, South Africa{'\n'}
+          VAT: 4123456789 | Reg: 2020/123456/07{'\n'}
+          Tel: 011 234 5678 | quotes@buildpro.co.za
+        </Text>
+        <View style={styles.bankInfo}>
+          <Text style={{ fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>Payment Details</Text>
+          <Text>Bank: Standard Bank | Acc: BuildPro Construction</Text>
+          <Text>Acc No: 123 456 789 | Branch: 051001</Text>
+          <Text>Reference: {data.documentNumber}</Text>
+        </View>
+      </View>
+      <View style={styles.docInfo}>
+        <Text style={styles.docTitle}>{data.type === 'quotation' ? 'QUOTATION' : 'INVOICE'}</Text>
+        <View style={styles.docMeta}>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <Text style={styles.metaLabel}>{data.type === 'quotation' ? 'Quote #' : 'Invoice #'}:</Text>
+            <Text style={styles.metaValue}> {data.documentNumber}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <Text style={styles.metaLabel}>Date:</Text>
+            <Text style={styles.metaValue}> {formatDate(data.documentDate)}</Text>
+          </View>
+          {data.validUntil && (
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+              <Text style={styles.metaLabel}>Valid Until:</Text>
+              <Text style={styles.metaValue}> {formatDate(data.validUntil)}</Text>
+            </View>
+          )}
+          {data.referenceQuotation && (
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+              <Text style={styles.metaLabel}>Reference:</Text>
+              <Text style={styles.metaValue}> {data.referenceQuotation}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const Footer = ({ data, pageNumber, totalPages }: { data: DocumentData; pageNumber: number; totalPages: number }) => {
+  const formatCurrency = (n: number) =>
+    `R ${n.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`;
+
+  return (
+    <View style={styles.footer} fixed>
+      {pageNumber === totalPages && (
+        <View style={styles.totalsBox}>
+          <View style={styles.totalRow}>
+            <Text>Subtotal</Text>
+            <Text>{formatCurrency(data.subtotal)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text>VAT (15%)</Text>
+            <Text>{formatCurrency(data.vat)}</Text>
+          </View>
+          {data.type === 'invoice' && data.amountInvoiced !== undefined && (
+            <>
+              <View style={styles.totalRow}>
+                <Text>Total from Quotation</Text>
+                <Text>{formatCurrency(data.total)}</Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text>Amount Invoiced</Text>
+                <Text>{formatCurrency(data.amountInvoiced)}</Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>Remaining Balance</Text>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>{formatCurrency(data.remainingBalance || 0)}</Text>
+              </View>
+            </>
+          )}
+          <View style={styles.grandTotalRow}>
+            <Text>{data.type === 'quotation' ? 'TOTAL DUE' : 'AMOUNT DUE NOW'}</Text>
+            <Text>{formatCurrency(data.type === 'invoice' ? (data.amountInvoiced || data.total) : data.total)}</Text>
+          </View>
+        </View>
+      )}
+      <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} fixed />
+    </View>
+  );
+};
+
+const DocumentPDF: React.FC<{ data: DocumentData }> = ({ data }) => {
   const formatCurrency = (amount: number) =>
-    `R ${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-  const formatDate = (dateStr: string) => format(new Date(dateStr), 'dd MMMM yyyy');
+    `R ${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`;
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.companyInfo}>
-            <Text style={styles.companyName}>BuildPro Construction</Text>
-            <Text style={styles.companyDetails}>
-              123 Construction Avenue{'\n'}
-              Sandton, Johannesburg{'\n'}
-              South Africa{'\n'}
-              VAT: 4123456789{'\n'}
-              Tel: 011 234 5678 | quotes@buildpro.co.za
-            </Text>
-          </View>
-          <View style={styles.quoteHeader}>
-            <Text style={styles.quoteTitle}>QUOTATION</Text>
-            <View style={styles.quoteMeta}>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Quote #:</Text>
-                <Text style={styles.metaValue}>{quotationNumber}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Date:</Text>
-                <Text style={styles.metaValue}>{formatDate(quotationDate)}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Valid Until:</Text>
-                <Text style={styles.metaValue}>{formatDate(validUntil)}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
+      {Object.keys(data.groupedItems).length > 0 ? (
+        Object.entries(data.groupedItems).map(([category, items], catIdx, arr) => (
+          <Page key={category} size="A4" style={styles.page} wrap>
+            <Header data={data} />
 
-        {/* Bill To & Project */}
-        <View style={styles.billToProject}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bill To</Text>
-            <Text style={styles.clientName}>{client.ClientName}</Text>
-            <Text style={styles.clientDetail}>
-              {client.Address || 'Address not provided'}
-              {'\n'}
-              Email: {client.Email || 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Project</Text>
-            <Text style={styles.clientName}>{project.ProjectName}</Text>
-            <Text style={styles.clientDetail}>Project ID: {project.ProjectID}</Text>
-          </View>
-        </View>
+            {/* Show Bill To & Project only on first page */}
+            {catIdx === 0 && (
+              <View>
+                <View style={styles.billToProject}>
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Bill To</Text>
+                    <Text style={styles.clientName}>{data.client.ClientName}</Text>
+                    <Text style={{ fontSize: 10, color: '#4b5563' }}>
+                      {data.client.Address || 'Address not provided'}{'\n'}
+                      {data.client.Email}
+                    </Text>
+                  </View>
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Project</Text>
+                    <Text style={styles.clientName}>{data.project.ProjectName}</Text>
+                    <Text style={{ fontSize: 10, color: '#4b5563' }}>
+                      Project ID: {data.project.ProjectID}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
 
-        {/* Line Items with Categories & Numbering */}
-        <View style={styles.table}>
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={styles.colNo}>#</Text>
-            <Text style={styles.colDesc}>DESCRIPTION</Text>
-            <Text style={styles.colQty}>QTY</Text>
-            <Text style={styles.colPrice}>RATE</Text>
-            <Text style={styles.colAmount}>AMOUNT</Text>
-          </View>
-
-          {/* Items grouped by category */}
-          {Object.entries(groupedItems).map(([category, items]) => (
-            <View key={category} wrap={false}>
-              {/* Category Header */}
+            {/* Category Items */}
+            <View wrap={false}>
               <View style={styles.categoryHeader}>
                 <Text style={styles.categoryText}>{category}</Text>
               </View>
-
-              {/* Category Items */}
-              {items.map((item, index) => (
+              <View style={styles.tableHeader}>
+                <Text style={styles.colNo}>#</Text>
+                <Text style={styles.colDesc}>DESCRIPTION</Text>
+                <Text style={styles.colQty}>QTY</Text>
+                <Text style={styles.colPrice}>RATE</Text>
+                <Text style={styles.colAmount}>AMOUNT</Text>
+              </View>
+              {items.map((item, idx) => (
                 <View key={item.id} style={styles.tableRow}>
-                  <Text style={styles.colNo}>{index + 1}</Text>
+                  <Text style={styles.colNo}>{idx + 1}</Text>
                   <Text style={styles.colDesc}>{item.description}</Text>
                   <Text style={styles.colQty}>{item.quantity}</Text>
                   <Text style={styles.colPrice}>{formatCurrency(item.price)}</Text>
-                  <Text style={styles.colAmount}>{formatCurrency(item.quantity * item.price)}</Text>
+                  <Text style={styles.colAmount}>{formatCurrency(item.price)}</Text>
                 </View>
               ))}
             </View>
-          ))}
-        </View>
 
-        {/* Totals */}
-        <View style={styles.totals}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal</Text>
-            <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>VAT (15%)</Text>
-            <Text style={styles.totalValue}>{formatCurrency(vat)}</Text>
-          </View>
-          <View style={styles.grandTotalRow}>
-            <Text>TOTAL AMOUNT DUE</Text>
-            <Text>{formatCurrency(total)}</Text>
-          </View>
-        </View>
+            {/* Notes only on last page */}
+            {catIdx === arr.length - 1 && (
+              <View style={styles.notes}>
+                <Text style={{ fontFamily: 'Helvetica-Bold', marginBottom: 6 }}>Terms & Conditions</Text>
+                <Text>{data.notes}</Text>
+              </View>
+            )}
 
-        {/* Notes */}
-        <View style={styles.notes}>
-          <Text style={styles.notesTitle}>Terms & Conditions</Text>
-          <Text style={styles.notesText}>{notes || 'No additional terms specified.'}</Text>
-        </View>
-
-        {/* Footer */}
-        <Text style={styles.footer} fixed>
-          Thank you for your business! • BuildPro Construction (Pty) Ltd • Reg: 2020/123456/07
-        </Text>
-      </Page>
+            <Footer data={data} pageNumber={catIdx + 1} totalPages={arr.length} />
+          </Page>
+        ))
+      ) : (
+        <Page style={styles.page}>
+          <Header data={data} />
+          <Text style={{ marginTop: 100, textAlign: 'center', color: '#9ca3af' }}>
+            No items to display
+          </Text>
+          <Footer data={data} pageNumber={1} totalPages={1} />
+        </Page>
+      )}
     </Document>
   );
 };
 
-export default QuotationPDF;
+export default DocumentPDF;
