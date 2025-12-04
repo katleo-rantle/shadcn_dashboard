@@ -9,33 +9,32 @@ import {
 } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
-// ──────────────────────────────────────────────────────────────────────
-// Shared Types - Import from your single source of truth
-// ──────────────────────────────────────────────────────────────────────
 import type { Client, Project } from '@/lib/types';
 
 export interface QuotationItem {
   id: number;
+  taskId?: number;
   description: string;
   quantity: number;
   price: number;
+  category?: string;
 }
 
 export interface QuotationData {
   quotationNumber: string;
   quotationDate: string;
   validUntil: string;
-  items: QuotationItem[];
+  groupedItems: Record<string, QuotationItem[]>;
   notes: string;
   client: Client;
   project: Project;
+  subtotal: number;
+  vat: number;
+  total: number;
 }
 
 const VAT_RATE = 15;
 
-// ──────────────────────────────────────────────────────────────────────
-// Styles
-// ──────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   page: {
     padding: 40,
@@ -51,9 +50,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: '#2563eb',
   },
-  companyInfo: {
-    flexDirection: 'column',
-  },
+  companyInfo: { flexDirection: 'column' },
   companyName: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -65,33 +62,18 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
     color: '#4b5563',
   },
-  quoteHeader: {
-    textAlign: 'right',
-  },
+  quoteHeader: { textAlign: 'right' },
   quoteTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#1e40af',
     marginBottom: 10,
   },
-  quoteMeta: {
-    fontSize: 10,
-    lineHeight: 1.6,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 2,
-  },
-  metaLabel: {
-    width: 80,
-    color: '#6b7280',
-  },
-  metaValue: {
-    width: 120,
-    textAlign: 'right',
-    fontWeight: 'bold',
-  },
+  quoteMeta: { fontSize: 10, lineHeight: 1.6 },
+  metaRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 2 },
+  metaLabel: { width: 80, color: '#6b7280' },
+  metaValue: { width: 120, textAlign: 'right', fontWeight: 'bold' },
+
   billToProject: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -100,9 +82,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 24,
   },
-  section: {
-    width: '48%',
-  },
+  section: { width: '48%' },
   sectionTitle: {
     fontSize: 11,
     fontWeight: 'bold',
@@ -111,19 +91,28 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  clientName: {
-    fontSize: 13,
+  clientName: { fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
+  clientDetail: { fontSize: 10, color: '#4b5563', lineHeight: 1.5 },
+
+  // Category Header — subtle, professional
+  categoryHeader: {
+    backgroundColor: '#f1f5f9',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginVertical: 12,
+    borderRadius: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1e40af',
+  },
+  categoryText: {
+    fontSize: 11,
     fontWeight: 'bold',
-    marginBottom: 4,
+    color: '#1e40af',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
-  clientDetail: {
-    fontSize: 10,
-    color: '#4b5563',
-    lineHeight: 1.5,
-  },
-  table: {
-    marginBottom: 24,
-  },
+
+  table: { marginBottom: 24 },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#1e40af',
@@ -139,21 +128,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
   },
-  colDesc: { width: '50%', paddingLeft: 8 },
+  colNo: { width: '8%', paddingLeft: 8 },
+  colDesc: { width: '52%', paddingLeft: 8 },
   colQty: { width: '15%', textAlign: 'right', paddingRight: 8 },
   colPrice: { width: '15%', textAlign: 'right', paddingRight: 8 },
   colAmount: { width: '20%', textAlign: 'right', paddingRight: 8 },
-  totals: {
-    marginLeft: 'auto',
-    width: '45%',
-    marginTop: 20,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-    fontSize: 11,
-  },
+
+  totals: { marginLeft: 'auto', width: '45%', marginTop: 20 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, fontSize: 11 },
   totalLabel: { color: '#4b5563' },
   totalValue: { fontWeight: 'bold' },
   grandTotalRow: {
@@ -166,23 +148,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  notes: {
-    marginTop: 32,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  notesTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#374151',
-  },
-  notesText: {
-    fontSize: 9,
-    lineHeight: 1.6,
-    color: '#4b5563',
-  },
+
+  notes: { marginTop: 32, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
+  notesTitle: { fontSize: 11, fontWeight: 'bold', marginBottom: 8, color: '#374151' },
+  notesText: { fontSize: 9, lineHeight: 1.6, color: '#4b5563' },
+
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -194,21 +164,19 @@ const styles = StyleSheet.create({
   },
 });
 
-// ──────────────────────────────────────────────────────────────────────
-// Main Document Component
-// ──────────────────────────────────────────────────────────────────────
-const QuotationPDFDocument: React.FC<QuotationData> = ({
-  quotationNumber,
-  quotationDate,
-  validUntil,
-  items,
-  notes,
-  client,
-  project,
-}) => {
-  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
-  const vat = subtotal * (VAT_RATE / 100);
-  const total = subtotal + vat;
+const QuotationPDF: React.FC<{ data: QuotationData }> = ({ data }) => {
+  const {
+    quotationNumber,
+    quotationDate,
+    validUntil,
+    groupedItems,
+    notes,
+    client,
+    project,
+    subtotal,
+    vat,
+    total,
+  } = data;
 
   const formatCurrency = (amount: number) =>
     `R ${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -263,26 +231,39 @@ const QuotationPDFDocument: React.FC<QuotationData> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Project</Text>
             <Text style={styles.clientName}>{project.ProjectName}</Text>
-            <Text style={styles.clientDetail}>
-              Project ID: {project.ProjectID}
-            </Text>
+            <Text style={styles.clientDetail}>Project ID: {project.ProjectID}</Text>
           </View>
         </View>
 
-        {/* Line Items */}
+        {/* Line Items with Categories & Numbering */}
         <View style={styles.table}>
+          {/* Table Header */}
           <View style={styles.tableHeader}>
+            <Text style={styles.colNo}>#</Text>
             <Text style={styles.colDesc}>DESCRIPTION</Text>
             <Text style={styles.colQty}>QTY</Text>
             <Text style={styles.colPrice}>RATE</Text>
             <Text style={styles.colAmount}>AMOUNT</Text>
           </View>
-          {items.map((item) => (
-            <View key={item.id} style={styles.tableRow}>
-              <Text style={styles.colDesc}>{item.description}</Text>
-              <Text style={styles.colQty}>{item.quantity}</Text>
-              <Text style={styles.colPrice}>{formatCurrency(item.price)}</Text>
-              <Text style={styles.colAmount}>{formatCurrency(item.quantity * item.price)}</Text>
+
+          {/* Items grouped by category */}
+          {Object.entries(groupedItems).map(([category, items]) => (
+            <View key={category} wrap={false}>
+              {/* Category Header */}
+              <View style={styles.categoryHeader}>
+                <Text style={styles.categoryText}>{category}</Text>
+              </View>
+
+              {/* Category Items */}
+              {items.map((item, index) => (
+                <View key={item.id} style={styles.tableRow}>
+                  <Text style={styles.colNo}>{index + 1}</Text>
+                  <Text style={styles.colDesc}>{item.description}</Text>
+                  <Text style={styles.colQty}>{item.quantity}</Text>
+                  <Text style={styles.colPrice}>{formatCurrency(item.price)}</Text>
+                  <Text style={styles.colAmount}>{formatCurrency(item.quantity * item.price)}</Text>
+                </View>
+              ))}
             </View>
           ))}
         </View>
@@ -318,4 +299,4 @@ const QuotationPDFDocument: React.FC<QuotationData> = ({
   );
 };
 
-export default QuotationPDFDocument;
+export default QuotationPDF;

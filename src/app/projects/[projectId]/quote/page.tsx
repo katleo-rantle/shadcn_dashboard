@@ -1,25 +1,37 @@
-// app/projects/[id]/quote/page.tsx
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Trash2, Download, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Download, ArrowLeft, Lock, AlertTriangle, FolderPlus } from 'lucide-react';
 import { format } from 'date-fns';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 
-import QuotationPDFDocument from '@/components/QuotationPDF';
-
+import QuotationPDF from '@/components/QuotationPDF';
 import { Project, Client } from '@/lib/types';
-import { tasks, projects, clients } from '@/lib/data';
+import { tasks as rawTasks, projects, clients } from '@/lib/data';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
-type Task = (typeof tasks)[number];
+import PDFButton from "@/components/PDFButton";
+
+type Task = (typeof rawTasks)[number] & { QuotationRef?: string | null };
+const tasks: Task[] = rawTasks as Task[];
 
 const VAT_RATE = 15;
+
+interface QuoteItem {
+  id: number;
+  taskId?: number;
+  description: string;
+  quantity: number;
+  price: number;
+  category?: string;
+}
 
 const QuotationTemplatePage = () => {
   const router = useRouter();
@@ -27,19 +39,13 @@ const QuotationTemplatePage = () => {
   const searchParams = useSearchParams();
 
   const projectId = Number(id);
-  const taskIdsString = searchParams.get('taskIds') || '';
-  const selectedTaskIDs = taskIdsString
-    .split(',')
-    .map(Number)
-    .filter(n => !isNaN(n));
+  const taskIdsParam = searchParams.get('taskIds') || '';
+  const requestedTaskIDs = taskIdsParam.split(',').map(Number).filter(n => !isNaN(n) && n > 0);
 
-  // Find real project & client
   const project = projects.find(p => p.ProjectID === projectId);
   const client = project ? clients.find(c => c.ClientID === project.ClientID) : null;
-  
-  
+
   if (!project || !client) {
-    console.log("params:", useParams());
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -52,47 +58,61 @@ const QuotationTemplatePage = () => {
     );
   }
 
-  const initialItems = useMemo(() => {
-    return tasks
-      .filter(t => selectedTaskIDs.includes(t.TaskID))
-      .map(t => ({
-        id: t.TaskID,
-        description: t.TaskName,
-        quantity: 1,
-        price: t.TaskBudget || 0,
-      }));
-  }, [selectedTaskIDs]);
-
-  const [quotationNumber] = useState(
-    `QUO-${format(new Date(), 'yyyy')}-${String(Math.floor(1000 + Math.random() * 9000))}`
+  const [quotationNumber] = useState(() =>
+    `QUO-${format(new Date(), 'yyyy')}-${String(1000 + Math.floor(Math.random() * 9000))}`
   );
-  const [quotationDate] = useState(new Date().toISOString().split('T')[0]);
-  const [validUntil] = useState(
-    format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+  const quotationDate = new Date().toISOString().split('T')[0];
+  const validUntil = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+
+  const { availableTasks, alreadyQuotedTasks } = useMemo(() => {
+    const available: Task[] = [];
+    const quoted: Task[] = [];
+
+    requestedTaskIDs.forEach(taskId => {
+      const task = tasks.find(t => t.TaskID === taskId);
+      if (task) {
+        task.QuotationRef ? quoted.push(task) : available.push(task);
+      }
+    });
+
+    return { availableTasks: available, alreadyQuotedTasks: quoted };
+  }, [requestedTaskIDs]);
+
+  const [items, setItems] = useState<QuoteItem[]>(() =>
+    availableTasks.map(t => ({
+      id: t.TaskID,
+      taskId: t.TaskID,
+      description: t.TaskName,
+      quantity: 1,
+      price: t.TaskBudget || 0,
+      category: 'General Works', // default
+    }))
   );
 
-  const [items, setItems] = useState(initialItems);
   const [notes, setNotes] = useState(
     'Payment terms: 50% deposit required to commence work.\nBalance due on completion.\nValid for 30 days.'
   );
+
+  const [categories, setCategories] = useState<string[]>(['General Works', 'Finishes', 'Electrical', 'Plumbing']);
+  const [newCategory, setNewCategory] = useState('');
+
+  const lockTasksToQuote = () => {
+    items.forEach(item => {
+      if (item.taskId) {
+        const task = tasks.find(t => t.TaskID === item.taskId);
+        if (task && !task.QuotationRef) task.QuotationRef = quotationNumber;
+      }
+    });
+  };
 
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
   const vat = subtotal * (VAT_RATE / 100);
   const total = subtotal + vat;
 
-  const updateItem = (
-    id: number,
-    field: 'description' | 'quantity' | 'price',
-    value: string | number
-  ) => {
+  const updateItem = (id: number, field: keyof QuoteItem, value: string | number) => {
     setItems(prev =>
       prev.map(item =>
-        item.id === id
-          ? {
-              ...item,
-              [field]: field === 'description' ? value : Number(value) || 0,
-            }
-          : item
+        item.id === id ? { ...item, [field]: value } : item
       )
     );
   };
@@ -100,25 +120,61 @@ const QuotationTemplatePage = () => {
   const addItem = () => {
     setItems(prev => [
       ...prev,
-      { id: Date.now(), description: 'New item', quantity: 1, price: 0 },
+      {
+        id: Date.now(),
+        description: 'New item',
+        quantity: 1,
+        price: 0,
+        category: categories[0],
+      },
     ]);
   };
 
-  const removeItem = (id: number) => {
-    setItems(prev => prev.filter(item => item.id !== id));
+  const removeItem = (id: number) => setItems(prev => prev.filter(item => item.id !== id));
+
+  const addNewCategory = () => {
+    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+      setCategories(prev => [...prev, newCategory.trim()]);
+      setNewCategory('');
+    }
   };
+
+  // Group items by category for numbering & display
+  const groupedItems = useMemo(() => {
+    const groups: Record<string, QuoteItem[]> = {};
+    items.forEach(item => {
+      const cat = item.category || 'Uncategorized';
+      groups[cat] = groups[cat] || [];
+      groups[cat].push(item);
+    });
+    return groups;
+  }, [items]);
+
+  // Generate numbered items with category headers
+  const numberedItems = Object.entries(groupedItems).flatMap(([category, catItems]) => {
+    const header = { type: 'category' as const, name: category };
+    const numbered = catItems.map((item, idx) => ({
+      ...item,
+      displayNumber: idx + 1,
+    }));
+    return [header, ...numbered];
+  });
 
   const pdfData = {
     quotationNumber,
     quotationDate,
     validUntil,
-    items,
+    groupedItems,
     notes,
     client,
+    items,
     project,
+    subtotal,
+    vat,
+    total,
   };
 
-  if (selectedTaskIDs.length === 0) {
+  if (requestedTaskIDs.length === 0) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6">
         <h1 className="text-3xl font-bold">No Tasks Selected</h1>
@@ -128,49 +184,90 @@ const QuotationTemplatePage = () => {
       </div>
     );
   }
+  const pdfDocument = useMemo(
+    //() => <QuotationPDF {...pdfData} />,
+    () => <QuotationPDF data={pdfData} />,
+    [quotationNumber, quotationDate, validUntil, items, notes]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-5xl px-4">
+
+
+        {/* Alerts: Some tasks already quoted */}
+        {alreadyQuotedTasks.length > 0 && (
+          <Alert className="mb-6 border-yellow-400 bg-yellow-50">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Tasks Already Quoted</AlertTitle>
+            <AlertDescription>
+              The following tasks are already included in another quotation and were skipped:
+              <ul className="mt-2 list-disc pl-5 text-sm">
+                {alreadyQuotedTasks.map(t => (
+                  <li key={t.TaskID}>
+                    <strong>{t.TaskName}</strong> → Quoted in{' '}
+                    <Badge variant="destructive">{t.QuotationRef}</Badge>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+        {/* Info: Tasks will be locked */}
+        {availableTasks.length > 0 && (
+          <Alert className="mb-6 border-green-400 bg-green-50">
+            <Lock className="h-4 w-4" />
+            <AlertTitle>Tasks Will Be Locked</AlertTitle>
+            <AlertDescription>
+              <span className="font-medium">
+                {availableTasks.length} task{availableTasks.length !== 1 ? 's' : ''}
+              </span>{' '}
+              will be permanently assigned to{' '}
+              <span className="font-bold text-green-700">{quotationNumber}</span> when you download the PDF.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Toolbar */}
         <div className="mb-8 flex items-center justify-between rounded-lg bg-white p-6 shadow">
           <Button variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
 
-          <div className="flex gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="New category..."
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addNewCategory()}
+                className="w-48"
+              />
+              <Button size="icon" onClick={addNewCategory} disabled={!newCategory.trim()}>
+                <FolderPlus className="h-4 w-4" />
+              </Button>
+            </div>
+
             <Button onClick={addItem} variant="secondary">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
+              <Plus className="mr-2 h-4 w-4" /> Add Item
             </Button>
 
-            <PDFDownloadLink
-              document={<QuotationPDFDocument {...pdfData} />}
+            <PDFButton
+              pdfDocument={pdfDocument}
               fileName={`${quotationNumber}.pdf`}
-            >
-              {({ loading }) => (
-                <Button disabled={loading}>
-                  <Download className="mr-2 h-4 w-4" />
-                  {loading ? 'Preparing...' : 'Download PDF'}
-                </Button>
-              )}
-            </PDFDownloadLink>
+              onBeforeDownload={lockTasksToQuote}
+            />
           </div>
         </div>
 
         {/* A4 Preview */}
-        <div
-          className="overflow-hidden rounded-lg bg-white shadow-2xl"
-          style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}
-        >
+        <div className="overflow-hidden rounded-lg bg-white shadow-2xl" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}>
           <div className="p-12 font-sans">
+
             {/* Header */}
             <div className="mb-12 flex justify-between border-b-4 border-blue-600 pb-8">
               <div>
-                <h1 className="mb-4 text-3xl font-bold text-blue-900">
-                  BuildPro Construction
-                </h1>
+                <h1 className="mb-4 text-3xl font-bold text-blue-900">BuildPro Construction</h1>
                 <div className="space-y-1 text-sm text-gray-600">
                   <p>123 Construction Avenue, Sandton</p>
                   <p>Johannesburg, Gauteng, 2196</p>
@@ -182,18 +279,9 @@ const QuotationTemplatePage = () => {
               <div className="text-right">
                 <h2 className="mb-8 text-5xl font-bold text-blue-600">QUOTATION</h2>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-end gap-4">
-                    <span className="font-medium">Quote #:</span>
-                    <span className="font-bold">{quotationNumber}</span>
-                  </div>
-                  <div className="flex justify-end gap-4">
-                    <span className="font-medium">Date:</span>
-                    <span>{format(new Date(quotationDate), 'dd MMMM yyyy')}</span>
-                  </div>
-                  <div className="flex justify-end gap-4">
-                    <span className="font-medium">Valid Until:</span>
-                    <span>{format(new Date(validUntil), 'dd MMMM yyyy')}</span>
-                  </div>
+                  <div className="flex justify-end gap-4"><span className="font-medium">Quote #:</span> <span className="font-bold">{quotationNumber}</span></div>
+                  <div className="flex justify-end gap-4"><span className="font-medium">Date:</span> <span>{format(new Date(quotationDate), 'dd MMMM yyyy')}</span></div>
+                  <div className="flex justify-end gap-4"><span className="font-medium">Valid Until:</span> <span>{format(new Date(validUntil), 'dd MMMM yyyy')}</span></div>
                 </div>
               </div>
             </div>
@@ -201,28 +289,16 @@ const QuotationTemplatePage = () => {
             {/* Bill To & Project */}
             <div className="mb-12 grid grid-cols-2 gap-12">
               <div>
-                <h3 className="mb-4 text-lg font-bold uppercase tracking-wider text-gray-700">
-                  Bill To
-                </h3>
+                <h3 className="mb-4 text-lg font-bold uppercase tracking-wider text-gray-700">Bill To</h3>
                 <p className="text-xl font-bold">{client.ClientName}</p>
-                <p className="text-sm text-gray-600">
-                  {(client as any).Address || 'Address not provided'}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Email: {(client as any).Email || 'N/A'}
-                </p>
-                <p className="text-sm text-gray-600">
-                  Contact: {client.ContactPerson || 'N/A'}
-                </p>
+                <p className="text-sm text-gray-600">{(client as any).Address || 'Address not provided'}</p>
+                <p className="text-sm text-gray-600">Email: {(client as any).Email || 'N/A'}</p>
+                <p className="text-sm text-gray-600">Contact: {client.ContactPerson || 'N/A'}</p>
               </div>
               <div className="text-right">
-                <h3 className="mb-4 text-lg font-bold uppercase tracking-wider text-gray-700">
-                  Project
-                </h3>
+                <h3 className="mb-4 text-lg font-bold uppercase tracking-wider text-gray-700">Project</h3>
                 <p className="text-xl font-bold">{project.ProjectName}</p>
-                <Badge variant="secondary" className="mt-2">
-                  ID: {project.ProjectID}
-                </Badge>
+                <Badge variant="secondary" className="mt-2">ID: {project.ProjectID}</Badge>
               </div>
             </div>
 
@@ -230,54 +306,84 @@ const QuotationTemplatePage = () => {
             <table className="mb-12 w-full table-auto border-collapse">
               <thead>
                 <tr className="border-b-2 border-gray-800">
+                  <th className="w-10 pb-4 text-left font-bold">#</th>
                   <th className="pb-4 text-left font-bold">Description</th>
                   <th className="pb-4 text-center font-bold">Qty</th>
                   <th className="pb-4 text-right font-bold">Rate</th>
                   <th className="pb-4 text-right font-bold">Amount</th>
+                  <th className="w-32 pb-4 text-center font-bold">Category</th>
                   <th className="w-12"></th>
                 </tr>
               </thead>
               <tbody>
-                {items.map(item => (
-                  <tr key={item.id} className="border-b">
-                    <td className="py-4">
-                      <Textarea
-                        value={item.description}
-                        onChange={e => updateItem(item.id, 'description', e.target.value)}
-                        className="min-h-10 resize-none border-0 p-0 text-sm focus:ring-0"
-                      />
-                    </td>
-                    <td className="py-4 text-center">
-                      <Input
-                        type="number"
-                        value={item.quantity}
-                        onChange={e => updateItem(item.id, 'quantity', e.target.value)}
-                        className="w-20 text-center"
-                      />
-                    </td>
-                    <td className="py-4 text-right">
-                      <Input
-                        type="number"
-                        value={item.price.toFixed(2)}
-                        onChange={e => updateItem(item.id, 'price', e.target.value)}
-                        step="0.01"
-                        className="w-28 text-right"
-                      />
-                    </td>
-                    <td className="py-4 text-right font-medium">
-                      R {(item.quantity * item.price).toFixed(2)}
-                    </td>
-                    <td className="py-4 text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {numberedItems.map((entry, idx) => {
+                  if ('type' in entry) {
+                    // Category Header
+                    return (
+                      <tr key={`cat-${entry.name}`} className="border-b bg-gray-50">
+                        <td colSpan={7} className="py-2 pl-4 text-sm font-medium text-gray-600 italic">
+                          {entry.name}
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  const item = entry;
+                  return (
+                    <tr key={item.id} className="border-b">
+                      <td className="py-3 pl-4 text-sm font-medium text-gray-700">
+                        {item.displayNumber}.
+                      </td>
+                      <td className="py-3">
+                        <Textarea
+                          value={item.description}
+                          onChange={e => updateItem(item.id, 'description', e.target.value)}
+                          className="min-h-10 resize-none border-0 p-0 text-sm focus:ring-0"
+                        />
+                      </td>
+                      <td className="py-3 text-center">
+                        <Input
+                          type="number"
+                          value={item.quantity}
+                          onChange={e => updateItem(item.id, 'quantity', e.target.value)}
+                          className="w-20 text-center"
+                        />
+                      </td>
+                      <td className="py-3 text-right">
+                        <Input
+                          type="number"
+                          value={Number(item.price).toFixed(2)}
+                          onChange={e => updateItem(item.id, 'price', e.target.value)}
+                          step="0.01"
+                          className="w-28 text-right"
+                        />
+                      </td>
+                      <td className="py-3 text-right font-medium">
+                        R {(item.quantity * item.price).toFixed(2)}
+                      </td>
+                      <td className="py-3 text-center">
+                        <Select
+                          value={item.category}
+                          onValueChange={(val) => updateItem(item.id, 'category', val)}
+                        >
+                          <SelectTrigger className="w-32 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map(cat => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="py-3 text-center">
+                        <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
@@ -302,11 +408,7 @@ const QuotationTemplatePage = () => {
             {/* Terms */}
             <div className="mt-16 border-t-2 border-gray-300 pt-8">
               <h3 className="mb-4 text-lg font-bold">Terms & Conditions</h3>
-              <Textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                className="min-h-32 text-sm"
-              />
+              <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-32 text-sm" />
             </div>
 
             <div className="mt-16 text-center text-sm text-gray-600">
