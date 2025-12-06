@@ -633,27 +633,27 @@ export const tasks: Task[] = [
 // === EMPLOYEES (with realistic pay rates) ===
 export const employees: Employee[] = [
   // General Workers (R180/day)
-  { EmployeeID: 1, Name: 'John Smith', Position: 'General Worker', DailyRate: 180.0 },
-  { EmployeeID: 2, Name: 'Mike Johnson', Position: 'General Worker', DailyRate: 180.0 },
-  { EmployeeID: 3, Name: 'Sarah Wilson', Position: 'General Worker', DailyRate: 180.0 },
-  { EmployeeID: 4, Name: 'David Brown', Position: 'General Worker', DailyRate: 180.0 },
-  { EmployeeID: 5, Name: 'Lisa Davis', Position: 'General Worker', DailyRate: 180.0 },
+  { EmployeeID: 1, Name: 'John Smith', Position: 'General Worker', DailyRate: 140.0 ,HourlyRate: 18.0 , projects:[1,2], ContactInfo:'078-958-7820'},
+  { EmployeeID: 2, Name: 'Mike Johnson', Position: 'General Worker', DailyRate: 180.0 ,HourlyRate: 18.0, projects:[1] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 3, Name: 'Sarah Wilson', Position: 'General Worker', DailyRate: 180.0 ,HourlyRate: 18.0, projects:[2] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 4, Name: 'David Brown', Position: 'General Worker', DailyRate: 180.0 ,HourlyRate: 18.0, projects:[2] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 5, Name: 'Lisa Davis', Position: 'General Worker', DailyRate: 180.0 ,HourlyRate: 18.0, projects:[2] , ContactInfo:'078-YYY-ZZZZ' },
 
   // Skilled Labor (R350/day)
-  { EmployeeID: 6, Name: 'Robert Garcia', Position: 'Skilled Labor', DailyRate: 350.0 },
-  { EmployeeID: 7, Name: 'Emily Rodriguez', Position: 'Skilled Labor', DailyRate: 350.0 },
-  { EmployeeID: 8, Name: 'James Martinez', Position: 'Skilled Labor', DailyRate: 350.0 },
-  { EmployeeID: 9, Name: 'Anna Lee', Position: 'Skilled Labor', DailyRate: 350.0 },
+  { EmployeeID: 6, Name: 'Robert Garcia', Position: 'Skilled Labor', DailyRate: 350.0 ,HourlyRate: 35.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 7, Name: 'Emily Rodriguez', Position: 'Skilled Labor', DailyRate: 350.0 ,HourlyRate: 35.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 8, Name: 'James Martinez', Position: 'Skilled Labor', DailyRate: 350.0 ,HourlyRate: 35.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 9, Name: 'Anna Lee', Position: 'Skilled Labor', DailyRate: 350.0 ,HourlyRate: 35.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
 
   // Bricklayers (R450/day)
-  { EmployeeID: 10, Name: 'Carlos Hernandez', Position: 'Bricklayer', DailyRate: 450.0 },
-  { EmployeeID: 11, Name: 'Maria Gonzalez', Position: 'Bricklayer', DailyRate: 450.0 },
-  { EmployeeID: 12, Name: 'Peter Wong', Position: 'Bricklayer', DailyRate: 450.0 },
+  { EmployeeID: 10, Name: 'Carlos Hernandez', Position: 'Bricklayer', DailyRate: 450.0 ,HourlyRate: 45.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 11, Name: 'Maria Gonzalez', Position: 'Bricklayer', DailyRate: 450.0 ,HourlyRate: 45.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 12, Name: 'Peter Wong', Position: 'Bricklayer', DailyRate: 450.0 ,HourlyRate: 45.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
 
   // Experienced Workers (R550/day)
-  { EmployeeID: 13, Name: 'Thomas Anderson', Position: 'Experienced', DailyRate: 550.0 },
-  { EmployeeID: 14, Name: 'Jennifer White', Position: 'Experienced', DailyRate: 550.0 },
-  { EmployeeID: 15, Name: 'Michael Chen', Position: 'Experienced', DailyRate: 550.0 },
+  { EmployeeID: 13, Name: 'Thomas Anderson', Position: 'Experienced', DailyRate: 550.0 ,HourlyRate: 55.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 14, Name: 'Jennifer White', Position: 'Experienced', DailyRate: 550.0 ,HourlyRate: 55.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
+  { EmployeeID: 15, Name: 'Michael Chen', Position: 'Experienced', DailyRate: 550.0 ,HourlyRate: 55.0, projects:[] , ContactInfo:'078-YYY-ZZZZ' },
 ];
 
 // === RESOURCE ASSIGNMENTS (Day-by-day allocation) ===
@@ -982,3 +982,61 @@ export const clients: Client[] = [
     BillingAddress: 'PO Box 2015, Umhlanga Rocks, 4320',
   },
 ];
+
+// === EMPLOYEE TIME CARD ENTRIES (Bi-Weekly: 2024-04-01 to 2024-04-14) ===
+// This data simulates user input in the TimeCard component
+
+import { EmployeeTimeCard } from './types';
+export const employeeTimeCards: EmployeeTimeCard[] = [
+  // Employee 1: John Smith (General Worker, R180/day)
+  {
+    employeeId: 1, 
+    entries: [
+      { date: '2024-04-01', worked: true, taskId: 1001, borrowed: 0 },
+      { date: '2024-04-02', worked: true, taskId: 1001, borrowed: 50 }, // Borrowed R50
+      { date: '2024-04-03', worked: false, taskId: null, borrowed: 0 }, // Unassigned/Day Off
+      { date: '2024-04-04', worked: false, taskId: null, borrowed: 0 }, // Unassigned/Day Off (Assigned to E4, E5, E6 for 1002)
+      { date: '2024-04-05', worked: false, taskId: null, borrowed: 0 },
+      { date: '2024-04-08', worked: true, taskId: 1004, borrowed: 0 }, // Next week activity
+      { date: '2024-04-11', worked: true, taskId: 1004, borrowed: 0 }, // Assigned to 1004
+      // Rest of the 14 days are assumed false/null unless specified
+    ],
+  },
+  
+  // Employee 4: David Brown (General Worker, R180/day)
+  {
+    employeeId: 4, 
+    entries: [
+      { date: '2024-04-01', worked: false, taskId: null, borrowed: 0 },
+      { date: '2024-04-04', worked: true, taskId: 1002, borrowed: 0 }, // Assigned to 1002
+      { date: '2024-04-05', worked: true, taskId: 1002, borrowed: 0 },
+      { date: '2024-04-06', worked: true, taskId: 1002, borrowed: 20 }, // Borrowed R20
+      { date: '2024-04-11', worked: true, taskId: 1004, borrowed: 0 }, // Assigned to 1004
+    ],
+  },
+
+  // Employee 6: Robert Garcia (Skilled Labor, R350/day)
+  {
+    employeeId: 6, 
+    entries: [
+      { date: '2024-04-04', worked: true, taskId: 1002, borrowed: 0 }, // Assigned to 1002
+      { date: '2024-04-05', worked: true, taskId: 1002, borrowed: 0 },
+      { date: '2024-04-06', worked: false, taskId: null, borrowed: 0 }, // Not working on Saturday
+      { date: '2024-04-08', worked: true, taskId: 1004, borrowed: 0 }, // Working on a Task 1004 entry
+      // Note: Employee 6 also has assignment 23, TaskID 5005, Date 2024-06-18 (outside this period)
+    ],
+  },
+
+  // Employee 13: Thomas Anderson (Experienced, R550/day)
+  {
+    employeeId: 13, 
+    entries: [
+      { date: '2024-04-01', worked: true, taskId: 1001, borrowed: 0 }, // Supervisor/Helper
+      { date: '2024-04-02', worked: true, taskId: 1001, borrowed: 100 },
+      { date: '2024-04-03', worked: true, taskId: 1002, borrowed: 0 }, // Helping with debris removal
+    ],
+  },
+];
+
+
+

@@ -1,4 +1,12 @@
 // --- Core Type Definitions ---
+export type TimeEntry = {
+  EntryID: number;
+  EmployeeID: number;
+  Date: string; // YYYY-MM-DD
+  TaskID: number | null;
+  HoursWorked: number;
+  AmountBorrowed: number;
+};
 
 export const projectTypes = [
   'Commercial',
@@ -70,6 +78,10 @@ export type Task = {
   QuotationRef?: string | null;  // ← Add this line (optional string for quotation number)
   category?: string;
   InvoiceRefs?: string [];
+  AssignedEmployees: number[]; // EmployeeIDs
+  Budget: number;
+  EstimatedHours: number;
+  ActualHours?: number;
 };
 
 export interface ChangeOrder {
@@ -97,7 +109,10 @@ export interface Employee {
   EmployeeID: number;
   Name: string;
   Position: 'General Worker' | 'Skilled Labor' | 'Bricklayer' | 'Experienced';
-  DailyRate: number;
+  HourlyRate: number;
+  DailyRate?: number;
+  ContactInfo: string;
+  projects: number[];
 }
 
 export interface ResourceAssignment {
@@ -131,3 +146,31 @@ export type JobWithTasks = Job & {
   JobProgress: number;
   ActualCost: number;
 };
+
+export interface DailyTimeEntry {
+  date: string; // YYYY-MM-DD
+  worked: boolean;
+  taskId: number | null; // Changed to number to match TaskID type
+  borrowed: number; // Amount borrowed
+}
+
+export interface EmployeeTimeCard {
+  employeeId: number; // Changed to number to match EmployeeID type
+  entries: DailyTimeEntry[];
+}
+// Component-specific type definitions
+export interface TimeCardData {
+  projectId: string;
+  startDate: string; 
+  tasks: Task[];
+  employees: Employee[];
+  employeeTimeCards: EmployeeTimeCard[];
+}
+
+export interface TimeCardCellProps {
+  entry: DailyTimeEntry;
+  employee: Employee;
+  projectTasks: Task[];
+  date: string;
+  onUpdate: (date: string, field: 'worked' | 'taskId' | 'borrowed', value: boolean | number | null) => void;
+}

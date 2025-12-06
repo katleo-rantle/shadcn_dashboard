@@ -152,7 +152,7 @@ export default function ProjectDashboard() {
     );
     return assignments.reduce((total, a) => {
       const emp = employees.find((e) => e.EmployeeID === a.EmployeeID);
-      return total + (emp ? (emp.DailyRate / 8) * a.Hours : 0);
+      return total + (emp ? (emp?.DailyRate || 0) * a.Hours : 0);
     }, 0);
   }, [projectTasks]);
 
